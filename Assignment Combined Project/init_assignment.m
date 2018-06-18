@@ -39,11 +39,13 @@ tram_params.rw = 0.2;	% Tram wheel radius
 tram_params.t_unload = 2 * 60; % Time at stops [s]
 tram_params.c_purchase = 1.08*37600000/18*11.75; % Purchase cost of tram [SEK]
 tram_params.v_max_kmh = 100; % Maximum allowed velocity [km/h]
-tram_params.P_max_kW = 450; % Maximum power [kW]
-tram_params.E_batt_kWh = 200; % Battery capacity [kWh]
+tram_params.P_max_kW = inf; % Maximum power [kW]
+%tram_params.E_batt_kWh = 200; % Battery capacity [kWh]
 
 % NOTE: Turned tram into battery powered, to conform with problem
 % description
+% NOTE: Removed maximum power of motor, since it only applied to traction and
+% still allowed regenerative braking of higher power
 
 %% Car vehicle parameters
 car_params = struct;
