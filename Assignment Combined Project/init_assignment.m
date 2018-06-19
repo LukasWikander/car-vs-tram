@@ -13,7 +13,7 @@ general_params.c_E_kWh = 1; % Cost of energy [SEK/kWh]
 general_params.v_max_kmh = 70; % Maximum allowed velocity [km/h]
 general_params.c_batt_kWh = 1000; % Cost of battery [SEK/kWh]
 general_params.e_batt_kWh = 0.1; % Energy density of battery [kWh/kg]
-general_params.c_motor_kW = 70; % Cost of motor [SEK/kW]
+general_params.c_motor_kW = 70+50; % Cost of motor + cost of power electronics [SEK/kW]
 general_params.C_rate = 1.5; % Charge C rate [A/Ah]
 general_params.c_station_kW = 2000; % Charge station cost [SEK/kW]
 general_params.n_variations = 10; % Number of tram variations (grid size)
@@ -36,9 +36,10 @@ tram_params.Cd = 1.8; % Tram drag coefficient
 tram_params.Ad = 3.32*(1.435+0.4); % Tram frontal area
 tram_params.Cr = 0.001; % Tram wheel rolling resistance
 tram_params.rw = 0.2;	% Tram wheel radius
-tram_params.t_unload = 2 * 60; % Time at stops [s]
-tram_params.c_purchase = 1.08*37600000/18*11.75; % Purchase cost of tram [SEK]
-tram_params.v_max_kmh = 100; % Maximum allowed velocity [km/h]
+tram_params.t_unload = 10 * 60; % Time at stops [s]
+tram_params.c_purchase = 1.08*37600000/18*11.75 + 3500 + 48000; % Purchase cost of tram + gear box + AD components [SEK]
+tram_params.c_maintenance = 1.3; % Maintenance cost of tram + track per km driven [SEK/km]
+tram_params.v_max_kmh = 70; % Maximum allowed velocity [km/h] (see assignment)
 tram_params.P_max_kW = inf; % Maximum power [kW]
 %tram_params.E_batt_kWh = 200; % Battery capacity [kWh]
 
@@ -55,11 +56,12 @@ car_params.Cd = 0.5; % Car drag coefficent
 car_params.Ad = 1.79*1.9; % Car frontal area
 car_params.rw = 0.37;	% Car wheel radius
 car_params.Cr = 0.02;	% Car rolling resistance
-car_params.t_unload = 0.5*60;   % Time at stops [s]
-car_params.c_purchase = 300000; % Purchase cost of car [SEK]
-car_params.v_max_kmh = 180; % Maximum allowed velocity [km/h]
-car_params.P_max_kW = 175; % Maximum power [kW]
-car_params.E_batt_kWh = 20; % Battery capacity [kWh] 
+car_params.t_unload = 5*60;   % Time at stops [s]
+car_params.c_purchase = 12000+3500+48000; % Purchase cost of car (base + gear box + AD components) [SEK]
+car_params.c_maintenance = 0.277; % Maintenance cost of car per km driven [SEK/km]
+car_params.v_max_kmh = 70; % Maximum allowed velocity [km/h] (see assignment)
+car_params.P_max_kW = inf; % Maximum power [kW]
+%car_params.E_batt_kWh = 20; % Battery capacity [kWh] 
 
 % NOTE: Increased battery size (compared to trip traction energy) to 
 % decrease charging time per trip
@@ -94,6 +96,6 @@ cost_estimation_output = cost_estimation(tram_params, car_params, general_params
 
 %% Plots
 % TODO: Plots
-plot_assignment(tram_params, car_params, drv_mission, pass_flow, tram_full_sim_output, car_full_sim_output, fleet_info_output, cost_estimation_output);
+plot_assignment(tram_params, car_params, general_params, drv_mission, pass_flow, tram_full_sim_output, car_full_sim_output, fleet_info_output, cost_estimation_output);
 
 fprintf('Done!\n');

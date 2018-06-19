@@ -22,7 +22,7 @@ mean_flow     = floor(mean_flow);
 output.mean_flow = mean_flow;
 
 % One way trip length [min]
-time_per_trip_tram      = tram_params.t_round_trip / 60; 
+time_per_trip_tram      = tram_params.t_round_trip / 2 / 60; 
 % Round trip length [min]
 time_per_round_trip_tram  = 2 * time_per_trip_tram + 2 * tram_params.t_unload / 60 + tram_params.t_charging_round_trip / 60;
 % Number of round trips per hour each tram
@@ -30,7 +30,7 @@ num_round_trip_hr_tram  = floor(60 / time_per_round_trip_tram);
 % Maximum number of trams
 max_flow_hr             = max(max(from_A2B),max(from_B2A));
 max_num_trams           = ceil(max_flow_hr / tram_params.n_pass / num_round_trip_hr_tram);
-n_variations_adjusted   = min([n_variations - 1, max_num_trams]);
+n_variations_adjusted   = min([n_variations - 1, max_num_trams]); % Question: why does it need to be adjusted?
 % Number of trams
 num_trams               = floor(linspace(0,max_num_trams,n_variations_adjusted));
 output.num_trams = num_trams;

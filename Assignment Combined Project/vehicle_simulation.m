@@ -12,6 +12,7 @@ output.P_max_kW = 0;
 output.P_traction_W = {};
 output.P_brake_W = {};
 output.speed_kmh = {};
+output.time = {};
 output.t_round_trip = 0;
 output.t_charging = 0;
 
@@ -122,6 +123,7 @@ for i = simulated_drive_cycles
 	output.req_battery_size_energy_kWh = max([output.req_battery_size_energy_kWh req_size_energy_kWh]);
 	output.req_battery_size_chargeTime_kWh = max([output.req_battery_size_chargeTime_kWh req_size_chargeTime_kWh]);
 	output.req_battery_size_kWh = max([output.req_battery_size_kWh max([req_size_energy_kWh req_size_chargeTime_kWh])]);
+	output.time{i} = Power.time;
     
 end
 % These parameters can only be known when battery size is known
