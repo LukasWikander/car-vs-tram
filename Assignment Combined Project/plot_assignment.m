@@ -87,5 +87,14 @@ ylabel('Number of trams in mix')
 clabel(Cp,hp,'LabelSpacing',1000)
 title('Isocost levels [MSEK]')
 grid on
+hold on
+[ZM,I] = min(Z);
+YM = nan(size(I));
+for ii = 1:length(I)
+	YM(ii) = fleet_info_output.num_trams(I(ii));
+end
+hnd=plot(dy/365,YM,'r','LineWidth',1.5);
+legend(hnd,'Minimal cost mix','Location','best')
+
 end
 
