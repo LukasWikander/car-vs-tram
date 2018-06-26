@@ -30,7 +30,7 @@ num_round_trip_hr_tram  = floor(60 / time_per_round_trip_tram);
 % Maximum number of trams
 max_flow_hr             = max(max(from_A2B),max(from_B2A));
 max_num_trams           = ceil(max_flow_hr / tram_params.n_pass / num_round_trip_hr_tram);
-n_variations_adjusted   = min([n_variations - 1, max_num_trams]); % Question: why does it need to be adjusted?
+n_variations_adjusted   = min([n_variations, max_num_trams + 1]); % Question: why does it need to be adjusted?
 % Number of trams
 num_trams               = floor(linspace(0,max_num_trams,n_variations_adjusted));
 output.num_trams = num_trams;
