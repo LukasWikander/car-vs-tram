@@ -61,13 +61,15 @@ xlabel('Time [s]')
 %%
 dy = 0:365*80;
 daily_cost_grid = cost_estimation_output.fleet_cost_dy * dy;
+dy_size = size(dy);
+n_size = size(cost_estimation_output.fleet_cost_dy);
 
-tram_purchase_grid = ceil(dy /365 ./ (general_params.l_life_tram_yr * ones(size(cost_estimation_output.l_life_car_yr))));
-car_purchase_grid = ceil(dy /365 ./ cost_estimation_output.l_life_car_yr);
+tram_purchase_grid = ceil(ones(n_size) * dy / 365 ./ ((general_params.l_life_tram_yr * ones(n_size)) * ones(dy_size)));
+car_purchase_grid = ceil(ones(n_size) * dy /365 ./ (cost_estimation_output.l_life_car_yr * ones(dy_size)));
 car_purchase_grid(isnan(car_purchase_grid)) = 0; % When using only trams, no cars are purchased
 
-Z = (cost_estimation_output.trams_cost_purchase' .* tram_purchase_grid ...
-	+ cost_estimation_output.cars_cost_purchase' .* car_purchase_grid ...
+Z = ((cost_estimation_output.trams_cost_purchase' * ones(dy_size)) .* tram_purchase_grid ...
+	+ (cost_estimation_output.cars_cost_purchase' * ones(dy_size)) .* car_purchase_grid ...
 	+ daily_cost_grid) *1e-6;
 
 [XG,YG] = meshgrid(dy/365, fleet_info_output.num_trams);

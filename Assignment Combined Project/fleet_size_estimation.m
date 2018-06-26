@@ -24,7 +24,7 @@ output.mean_flow = mean_flow;
 % One way trip length [min]
 time_per_trip_tram      = tram_params.t_round_trip / 2 / 60; 
 % Round trip length [min]
-time_per_round_trip_tram  = 2 * time_per_trip_tram + 2 * tram_params.t_unload / 60 + tram_params.t_charging_round_trip / 60;
+time_per_round_trip_tram  = 2 * time_per_trip_tram + max(2 * tram_params.t_unload / 60, tram_params.t_charging_round_trip / 60);
 % Number of round trips per hour each tram
 num_round_trip_hr_tram  = floor(60 / time_per_round_trip_tram);
 % Maximum number of trams
@@ -40,7 +40,7 @@ flow_cap_hr_tram        = tram_params.n_pass * num_round_trip_hr_tram .* num_tra
 % One way trip length [min]
 time_per_trip_car       = car_params.t_round_trip / 60;  
 % Round trip length [min]
-time_per_round_trip_car   = 2 * time_per_trip_car + 2 * car_params.t_unload / 60 + car_params.t_charging_round_trip / 60;
+time_per_round_trip_car   = 2 * time_per_trip_car + max(2 * car_params.t_unload / 60, car_params.t_charging_round_trip / 60);
 % Number of round trips per hour each car
 num_round_trip_hr_car   = floor(60 / time_per_round_trip_car);   
 % Number of cars in fleet
