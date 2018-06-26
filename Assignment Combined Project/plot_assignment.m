@@ -94,7 +94,7 @@ for ii = 1:length(I)
 	YM(ii) = fleet_info_output.num_trams(I(ii));
 end
 hnd=plot(dy/365,YM,'r','LineWidth',1.5);
-legend(hnd,'Minimal cost mix','Location','best')
+legend(hnd,'Minimal cost mix','Location','northwest')
 
 end
 
