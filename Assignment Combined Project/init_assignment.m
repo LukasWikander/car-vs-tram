@@ -6,6 +6,14 @@ clc
 drv_mission  = load ('dc_AtoB.mat');
 pass_flow    = load ('passengers.mat');
 
+l = diff(drv_mission.dc.s);
+M = [0.5*eye(length(drv_mission.dc.slope)-1) zeros(length(drv_mission.dc.slope)-1,1)] ...
+	+ [zeros(length(drv_mission.dc.slope)-1,1) 0.5*eye(length(drv_mission.dc.slope)-1)]; % Mean adjacent value matrix
+
+a = M*drv_mission.dc.slope; 
+drv_mission.dc.pos = cumsum([0; l.*cos(a)]); % Flight distance [m]
+drv_mission.dc.alt = cumsum([drv_mission.dc.altinit; l.*sin(a)]);
+
 %% Assignment given parameters
 general_params = struct;
 general_params.m_pass_kg = 80; % Passenger weight [kg]
@@ -28,6 +36,9 @@ general_params.l_life_tram_yr = 40; % Lifetime of tram [year]
 general_params.l_life_car_km = 320000; % Expected mileage of car [km]
 general_params.t_zerotomax = 20; % Acceleration time for constructed drive cycle [s]
 
+general_params.rho_air = 1.1839;	% Air density [kg/m3]
+general_params.acc_gravity = 9.81;	% Acceleration of gravity [m/s2]
+
 %% Tram vehicle parameters
 tram_params = struct;
 tram_params.m_kg = 36800; % Tram weight [kg]
@@ -41,7 +52,11 @@ tram_params.c_purchase = 1.08*37600000/18*11.75 + 3500 + 48000; % Purchase cost 
 tram_params.c_maintenance = 1.3; % Maintenance cost of tram + track per km driven [SEK/km]
 tram_params.v_max_kmh = 70; % Maximum allowed velocity [km/h] (see assignment)
 tram_params.P_max_kW = inf; % Maximum power [kW]
-%tram_params.E_batt_kWh = 200; % Battery capacity [kWh]
+
+% Dynamic programming cost function parameters:
+tram_params.accpenalty = 0.25;
+tram_params.traveltimepenalty = 0.058;
+tram_params.energypenalty = 0.01;
 
 % NOTE: Turned tram into battery powered, to conform with problem
 % description
@@ -61,24 +76,32 @@ car_params.c_purchase = 12000+3500+48000; % Purchase cost of car (base + gear bo
 car_params.c_maintenance = 0.277; % Maintenance cost of car per km driven [SEK/km]
 car_params.v_max_kmh = 70; % Maximum allowed velocity [km/h] (see assignment)
 car_params.P_max_kW = inf; % Maximum power [kW]
-%car_params.E_batt_kWh = 20; % Battery capacity [kWh] 
+
+% Dynamic programming cost function parameters:
+car_params.accpenalty = 0.25;
+car_params.traveltimepenalty = 0.058;
+car_params.energypenalty = 0.01;
 
 % NOTE: Increased battery size (compared to trip traction energy) to 
 % decrease charging time per trip
 
 %% Vehicle simulation
 % Full tram
+fprintf(' --- Full tram simulation --- \n')
 tram_full_sim_output = vehicle_simulation(tram_params, general_params, drv_mission, pass_flow);
 
 % Empty tram
+fprintf(' --- Empty tram simulation --- \n')
 tram_empty_params = tram_params;
 tram_empty_params.n_pass = 0;
 tram_empty_sim_output = vehicle_simulation(tram_empty_params, general_params, drv_mission, pass_flow);
 
 % Full car
+fprintf(' --- Full car simulation --- \n')
 car_full_sim_output = vehicle_simulation(car_params, general_params, drv_mission, pass_flow);
 
 % Empty car
+fprintf(' --- Empty car simulation --- \n')
 car_empty_params = car_params;
 car_empty_params.n_pass = 0;
 car_empty_sim_output = vehicle_simulation(car_empty_params, general_params, drv_mission, pass_flow);
