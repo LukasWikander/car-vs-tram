@@ -41,6 +41,9 @@ dc.pos = cumsum([0; l.*cos(a)]); % Flight distance [m]
 dc.alt = cumsum([dc.altinit; l.*sin(a)]);
 amax = general_params.v_max_kmh/3.6/general_params.t_zerotomax; % Maximum allowed acceleration [m/s^2]
 
+% TODO: Use dynamic programming to calculate better velocity profile
+%v = velocity_optimization();
+
 % Generate simple accelerate-vmax-decelerate velocity profile
 t0 = 0;
 t1 = general_params.v_max_kmh/3.6/amax;
@@ -154,8 +157,9 @@ switch idx
 		cycle(:,1) = t;
 		cycle(:,2) = v;
 		cycle(:,3) = flipud(cumsum(v));
-		cycle(:,4) = flipud(interp1(dc.dist,dc.alt,cycle(:,3),'pchip'));
-		cycle(:,5) = -1*flipud(interp1(dc.dist,dc.slope,cycle(:,3),'pchip'));
+		cycle(:,4) = flipud(interp1(dc.dist,dc.alt,flipud(cycle(:,3)),'pchip'));
+		cycle(:,5) = -1*flipud(interp1(dc.dist,dc.slope,flipud(cycle(:,3)),'pchip'));
+		
 end
 cycle_name = Drive_cycles(idx);
 endtime = max(cycle(:,1));
