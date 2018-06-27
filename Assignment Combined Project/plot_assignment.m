@@ -72,9 +72,19 @@ Z = ((cost_estimation_output.trams_cost_purchase' * ones(dy_size)) .* tram_purch
 	+ (cost_estimation_output.cars_cost_purchase' * ones(dy_size)) .* car_purchase_grid ...
 	+ daily_cost_grid) *1e-6;
 
+% Minimum cost
+[ZM,I] = min(Z);
+YM = nan(size(I));
+for ii = 1:length(I)
+	YM(ii) = fleet_info_output.num_trams(I(ii));
+end
+
 [XG,YG] = meshgrid(dy/365, fleet_info_output.num_trams);
 figure('Name','Accumulated costs')
 surf(XG, YG, Z, 'EdgeColor', 'None')
+hold on
+hnd=plot3(dy/365,YM,ZM,'r','LineWidth',1.5);
+legend(hnd,'Cost minimizing mix','Location','best')
 xlabel('Time [years]')
 ylabel('Number of trams in mix')
 zlabel('Cost [MSEK]')
@@ -88,13 +98,8 @@ clabel(Cp,hp,'LabelSpacing',1000)
 title('Isocost levels [MSEK]')
 grid on
 hold on
-[ZM,I] = min(Z);
-YM = nan(size(I));
-for ii = 1:length(I)
-	YM(ii) = fleet_info_output.num_trams(I(ii));
-end
 hnd=plot(dy/365,YM,'r','LineWidth',1.5);
-legend(hnd,'Minimal cost mix','Location','northwest')
+legend(hnd,'Cost minimizing mix','Location','northwest')
 
 end
 
