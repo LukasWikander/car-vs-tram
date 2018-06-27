@@ -8,12 +8,14 @@ plot(tram_simulation_results.time{1}, (tram_simulation_results.P_traction_W{1}+t
 title('A to B')
 ylabel('Power [kW]')
 xlabel('Time [s]')
+grid on
 
 subplot(212)
 plot(tram_simulation_results.time{2}, (tram_simulation_results.P_traction_W{2}+tram_simulation_results.P_brake_W{2})/1000)
 title('B to A')
 ylabel('Power [kW]')
 xlabel('Time [s]')
+grid on
 
 %%
 figure('Name','Power profile car')
@@ -22,12 +24,14 @@ plot(car_simulation_results.time{1}, (car_simulation_results.P_traction_W{1}+car
 title('A to B')
 ylabel('Power [kW]')
 xlabel('Time [s]')
+grid on
 
 subplot(212)
 plot(car_simulation_results.time{2}, (car_simulation_results.P_traction_W{2}+car_simulation_results.P_brake_W{2})/1000)
 title('B to A')
 ylabel('Power [kW]')
 xlabel('Time [s]')
+grid on
 
 %%
 figure('Name','Speed profile tram')
@@ -36,12 +40,14 @@ plot(tram_simulation_results.time{1}, tram_simulation_results.speed_kmh{1})
 title('A to B')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
+grid on
 
 subplot(212)
 plot(tram_simulation_results.time{2}, tram_simulation_results.speed_kmh{2})
 title('B to A')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
+grid on
 
 %%
 figure('Name','Speed profile car')
@@ -50,12 +56,14 @@ plot(car_simulation_results.time{1}, car_simulation_results.speed_kmh{1})
 title('A to B')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
+grid on
 
 subplot(212)
 plot(car_simulation_results.time{2}, car_simulation_results.speed_kmh{2})
 title('B to A')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
+grid on
 
 
 %%
