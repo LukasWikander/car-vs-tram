@@ -55,8 +55,8 @@ tram_params.P_max_kW = inf; % Maximum power [kW]
 
 % Dynamic programming cost function parameters:
 tram_params.accpenalty = 0.25;
-tram_params.traveltimepenalty = 0.058;
-tram_params.energypenalty = 0.01;
+tram_params.traveltimepenalty = 0.25*0.058;
+tram_params.energypenalty = 0.1;
 
 % NOTE: Turned tram into battery powered, to conform with problem
 % description
@@ -80,7 +80,7 @@ car_params.P_max_kW = inf; % Maximum power [kW]
 % Dynamic programming cost function parameters:
 car_params.accpenalty = 0.25;
 car_params.traveltimepenalty = 0.058;
-car_params.energypenalty = 0.01;
+car_params.energypenalty = 0.1;
 
 % NOTE: Increased battery size (compared to trip traction energy) to 
 % decrease charging time per trip

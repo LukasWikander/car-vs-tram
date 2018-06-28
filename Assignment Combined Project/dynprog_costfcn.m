@@ -1,0 +1,9 @@
+function instcost = dynprog_costfcn(v, vupd, Pb, task)
+%DYNPROG_COSTFCN Cost function for instantaneous cost 
+% Consumed el. energy + travel cost + acceleration penalty in [kWh]
+instcost = ...
+	task.ds*task.energypenalty*Pb/3.6e6/v ...
+	+ task.ds*task.traveltimepenalty/3.6/v ...
+	+ task.accpenalty*(v-vupd).^2/task.ds; 
+end
+
