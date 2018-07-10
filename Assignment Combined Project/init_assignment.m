@@ -58,11 +58,6 @@ tram_params.accpenalty = 0.25;
 tram_params.traveltimepenalty = 0.25*0.058;
 tram_params.energypenalty = 0.1;
 
-% NOTE: Turned tram into battery powered, to conform with problem
-% description
-% NOTE: Removed maximum power of motor, since it only applied to traction and
-% still allowed regenerative braking of higher power
-
 %% Car vehicle parameters
 car_params = struct;
 car_params.m_kg = 2500; % Car weight [kg]
