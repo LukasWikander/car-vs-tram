@@ -83,6 +83,13 @@ car_empty_params = car_params;
 car_empty_params.n_pass = 0;
 car_empty_sim_output = vehicle_simulation(car_empty_params, general_params, drv_mission, pass_flow);
 
+% Empty tram vs empty car
+energy_loss_empty_tram = tram_full_sim_output.req_battery_size_energy_kWh - tram_empty_sim_output.req_battery_size_energy_kWh;
+energy_loss_empty_tram_pu = energy_loss_empty_tram / tram_empty_sim_output.req_battery_size_energy_kWh;
+
+energy_loss_empty_car = car_full_sim_output.req_battery_size_energy_kWh - car_empty_sim_output.req_battery_size_energy_kWh;
+energy_loss_empty_car_pu = energy_loss_empty_car / car_empty_sim_output.req_battery_size_energy_kWh;
+
 %% Fleet size estimation
 tram_params.t_round_trip = tram_full_sim_output.t_round_trip;
 tram_params.t_charging_round_trip = tram_full_sim_output.t_charging_round_trip;
