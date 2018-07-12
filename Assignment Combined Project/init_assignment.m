@@ -86,9 +86,13 @@ car_empty_sim_output = vehicle_simulation(car_empty_params, general_params, drv_
 %% Fleet size estimation
 tram_params.t_round_trip = tram_full_sim_output.t_round_trip;
 tram_params.t_charging_round_trip = tram_full_sim_output.t_charging_round_trip;
+tram_params.E_battery_size_kWh = tram_full_sim_output.req_battery_size_kWh;
+tram_params.E_round_trip_kWh = tram_full_sim_output.E_tot_kWh;
 car_params.t_round_trip = car_full_sim_output.t_round_trip;
 car_params.t_charging_round_trip = car_full_sim_output.t_charging_round_trip;
-fleet_info_output = fleet_size_estimation(tram_params, car_params, drv_mission, pass_flow, general_params.n_variations);
+car_params.E_battery_size_kWh = car_full_sim_output.req_battery_size_kWh;
+car_params.E_round_trip_kWh = car_full_sim_output.E_tot_kWh;
+fleet_info_output = fleet_size_estimation(tram_params, car_params, general_params, drv_mission, pass_flow, general_params.n_variations);
 
 %% Cost estimation
 % TODO: Use empty vehicle simulation to get more accurate costs

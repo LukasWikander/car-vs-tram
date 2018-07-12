@@ -1,4 +1,4 @@
-function [ output ] = fleet_size_estimation( tram_params, car_params, drv_mission, pass_flow, n_variations )
+function [ output ] = fleet_size_estimation( tram_params, car_params, general_params, drv_mission, pass_flow, n_variations )
 %FLEET_SIZE_ESTIMATION Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -99,22 +99,171 @@ unused_cars = num_cars_grid - car_freq;
 output.car_freq = car_freq;
 output.unused_cars = unused_cars;
 
+% Minimum number of car chargers
+n_car_chargers = min_number_of_chargers(general_params, car_params, car_freq, ...
+    num_cars, time_hr, n_variations_adjusted, time_per_round_trip_car * 60);
+output.n_car_chargers = n_car_chargers;
+
 end
 
-function [ freq ] = vehicle_frequence (vehicle_params, num_pass, num_round_trip_hr, num_vehicles, time_hr, n_variations)
+function [ freq ] = vehicle_frequence (vehicle_params, num_pass, ...
+    num_round_trip_hr, num_vehicles_grid, time_hr, n_variations)
+%VEHICLE_FREQUENCE Calculates the number of round trips per hour and mix
+%   For this vehicle type, this function calculates the number required
+%   number of round trips for each hour and mix of vehicles
+
 flow = num_pass;
 freq = zeros(n_variations,length(time_hr));
 for i = 2:n_variations
     for  j = 1:length(time_hr)
         if (flow(i,j) < vehicle_params.n_pass) && (flow(i,j) > 0)
             freq(i,j) = 1;
-        elseif (flow(i,j)> vehicle_params.n_pass) && (flow(i,j) < vehicle_params.n_pass * num_round_trip_hr)
+        elseif (flow(i,j)> vehicle_params.n_pass) && (flow(i,j) ...
+                < vehicle_params.n_pass * num_round_trip_hr)
             freq(i,j) = num_round_trip_hr ;
-        elseif flow(i,j)>= vehicle_params.n_pass * num_round_trip_hr * num_vehicles(i,j)
-            freq(i,j) = num_round_trip_hr * num_vehicles(i,j);
+        elseif flow(i,j)>= vehicle_params.n_pass * num_round_trip_hr ...
+                * num_vehicles_grid(i,j)
+            freq(i,j) = num_round_trip_hr * num_vehicles_grid(i,j);
         else
             freq(i,j) = ceil(flow(i,j) / vehicle_params.n_pass);
         end
+    end
+end
+end
+
+function [ n_chargers ] = min_number_of_chargers (general_params, ...
+    vehicle_params, vehicle_freq, num_vehicles, time_hr, n_variations, ...
+    t_round_trip)
+%MIN_NUMBER_OF_CHARGERS Calculates the minimum amount of chargers required
+%   For this vehicle type, calculate the minimum number of chargers
+%   required fo each mix of vehicles
+%   Assumption: All chargers situated at exactly one of the destinations,
+%   to simplify evaluation
+
+n_chargers = num_vehicles;
+for i = 1:n_variations
+    if 0 == num_vehicles(i)
+       n_chargers(i) = 0;
+       continue;
+    end
+    
+    % Binary search to find minimum number of chargers
+    % The assumption is that a valid number of chargers exist in the search
+    % space, i.e. at the maximum of one charger per vehicle
+    left = 0;
+    right = n_chargers(i);
+    while (left <= right)
+        mid = floor((left + right) / 2);
+        if (check_number_of_chargers(general_params, vehicle_params, ...
+                vehicle_freq(i,:), num_vehicles(i), time_hr, mid, t_round_trip))
+            right = mid - 1;
+            n_chargers(i) = mid;
+        else
+            left = mid + 1;
+        end
+    end
+end
+end
+
+function [ ok ] = check_number_of_chargers (general_params, vehicle_params, ...
+    vehicle_freq, num_vehicles, time_hr, number_of_chargers, t_round_trip)
+%CHECK_NUMBER_OF_CHARGERS Checks if this number of chargers is enough
+%   Checks if this number of chargers is enough to perform all the
+%   required vehicle trips and recharge all vehicles completely until
+%   the next day.
+%   The charging strategy used is to drive the vehicles with the most
+%   energy left and charge the vehicles with the least energy left. This
+%   is reevaluated after each round trip. In addition, the during a round
+%   trip iteration, if a vehicle is fully charged, another vehicle may
+%   continue to use that charger for the remaining time.
+
+vehicles = ones(num_vehicles,1) * vehicle_params.E_battery_size_kWh;
+prev_hr = time_hr(1) - 1;
+for i = 1:numel(time_hr)
+    % NOTE: Vehicles are sorted in ascending order by remaining energy
+    
+    % Special case: Gap of more than one hour detected, charge accordingly
+    curr_hr = time_hr(i);
+    if curr_hr > prev_hr + 1
+        diff_s = (curr_hr - prev_hr - 1) * 3600;
+        vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
+            general_params.C_rate, number_of_chargers, 0, diff_s);
+        vehicles = sort(vehicles);
+    end
+    
+    % For each round trip time, charge vehicles with the least
+    % amount of remaining energy, and discharge (use) vehicles with
+    % the most amount of remaining energy. If discharge results in empty
+    % battery, this number of chargers is not enough for the daily commute.
+    iterations = ceil(vehicle_freq(i) / num_vehicles);
+    for j = 1:iterations
+        trip_vehicles = min(num_vehicles, vehicle_freq(i) - (j-1)*num_vehicles);
+        vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
+            general_params.C_rate, number_of_chargers, trip_vehicles, t_round_trip);
+        [vehicles, ok] = update_discharging(vehicles, ...
+            vehicle_params.E_round_trip_kWh, trip_vehicles);
+        if ~ok
+            return;
+        end
+        vehicles = sort(vehicles);
+    end
+    
+    % Remainder of hour spent charging all vehicles
+    t_remaining = max(0, 3600 - iterations * t_round_trip);
+    vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
+        general_params.C_rate, number_of_chargers, 0, t_remaining);
+    vehicles = sort(vehicles);
+    prev_hr = curr_hr;
+end
+
+% Need to be able to fully charge during night
+t_night = 3600 * (min(time_hr) + 24 - max(time_hr));
+vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
+    general_params.C_rate, number_of_chargers, 0, t_night);
+ok = vehicle_params.E_battery_size_kWh <= max(vehicles);
+end
+
+function [ vehicles ] = update_charging(vehicles, E_max, C_rate, n_chargers, ...
+    n_excluded_vehicles, t_charging)
+%UPDATE_CHARGING Charge specified vehicles
+%   'vehicles' has to be sorted in ascending order
+
+n_vehicles = numel(vehicles);
+if (0 == n_chargers) || (n_vehicles == n_excluded_vehicles)
+    return;
+end
+t_charge_full = 3600 / C_rate;
+E_diff_max_charger = (t_charging / t_charge_full) * E_max;
+E_chargers_tot = E_diff_max_charger * n_chargers;
+
+% Each vehicle may charge 't_charging' amount of time in total, but if that
+% is not required in order to fully charge vehicle, some other vehicle may
+% use the remaining time at that charger
+for i = 1:(n_vehicles - n_excluded_vehicles)
+    E_vehicle = vehicles(i);
+    E_diff_max_vehicle = max(0, E_max - E_vehicle);
+    E_diff_actual = min(E_diff_max_charger, E_diff_max_vehicle);
+    vehicles(i) = E_vehicle + E_diff_actual;
+    E_chargers_tot = max(0, E_chargers_tot - E_diff_actual);
+    if 0 >= E_chargers_tot
+       break;
+    end
+end
+end
+
+function [ vehicles, ok ] = update_discharging(vehicles, E_rt, n_trip_vehicles)
+%UPDATE_DISCHARGING Discharge the specified vehicles
+%   'vehicles' has to be sorted in ascending order
+
+ok = true;
+n_vehicles = numel(vehicles);
+if 0 == n_trip_vehicles
+    return
+end;
+for i = (n_vehicles - n_trip_vehicles + 1):n_vehicles
+    vehicles(i) = max(0, vehicles(i) - E_rt);
+    if 0 == vehicles(i)
+        ok = false;
     end
 end
 end
