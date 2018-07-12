@@ -33,15 +33,28 @@ fprintf('Number of trams: %1.0f, number of cars: %1.0f \n', fleet_info_output.nu
 
 fprintf('\n--Equipment purchase cost--\n');
 % Sum equipment cost
-% TODO: Costs of parking space, charging stations
+% TODO: Costs of parking space, tracks, roads
+
+% Vehicle purchase cost
 cars_cost_purchase = fleet_info_output.num_cars * ...
 	(car_params.c_purchase + car_drive_cycle_cost.c_motor + car_drive_cycle_cost.c_batt);
 trams_cost_purchase = fleet_info_output.num_trams * ...
 	(tram_params.c_purchase + tram_drive_cycle_cost.c_motor + tram_drive_cycle_cost.c_batt);
-fleet_cost_purchase =  trams_cost_purchase + cars_cost_purchase;
+
+% Charging station purchase cost
+car_chargers_cost_purchase = fleet_info_output.P_car_chargers ...
+    * general_params.c_station_kW;
+tram_chargers_cost_purchase = fleet_info_output.P_tram_chargers ...
+    * general_params.c_station_kW;
+
+% Fleet purchase cost
+fleet_cost_purchase =  trams_cost_purchase + cars_cost_purchase ...
+    + car_chargers_cost_purchase + tram_chargers_cost_purchase;
 
 output.cars_cost_purchase = cars_cost_purchase;
 output.trams_cost_purchase = trams_cost_purchase;
+output.car_chargers_cost_purchase = car_chargers_cost_purchase;
+output.tram_chargers_cost_purchase = tram_chargers_cost_purchase;
 output.fleet_cost_purchase = fleet_cost_purchase';
 [min_cost_purchase, idx] = min(fleet_cost_purchase);
 output.min_cost_purchase = min_cost_purchase;
