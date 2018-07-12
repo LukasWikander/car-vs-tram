@@ -99,10 +99,22 @@ unused_cars = num_cars_grid - car_freq;
 output.car_freq = car_freq;
 output.unused_cars = unused_cars;
 
-% Minimum number of car chargers
+% Minimum number of car and tram chargers
+% NOTE: This currently uses the C-rate to calculate charging time, but
+% it might be better to use charging station power instead if it's better
+% to have it lower than the C-rate. Also, having that number makes it
+% cleaner to calculate the charging station cost (which currently is
+% calculated separately in the cost estimation function using C-rate)
 n_car_chargers = min_number_of_chargers(general_params, car_params, car_freq, ...
     num_cars, time_hr, n_variations_adjusted, time_per_round_trip_car * 60);
 output.n_car_chargers = n_car_chargers;
+output.P_car_charger_kW = car_params.E_battery_size_kWh * general_params.C_rate;
+output.P_car_chargers = output.P_car_charger_kW * n_car_chargers;
+n_tram_chargers = min_number_of_chargers(general_params, tram_params, tram_freq, ...
+    num_trams, time_hr, n_variations_adjusted, time_per_round_trip_tram * 60);
+output.n_tram_chargers = n_tram_chargers;
+output.P_tram_charger_kW = tram_params.E_battery_size_kWh * general_params.C_rate;
+output.P_tram_chargers = output.P_tram_charger_kW * n_tram_chargers;
 
 end
 
