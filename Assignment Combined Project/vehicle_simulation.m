@@ -72,12 +72,10 @@ for i = simulated_drive_cycles
 	end
 	
 	%% Dynamic programming to calculate optimal velocity profile
-	fprintf('Optimizing velocity profile...\n')
 	velocity_optimization_results = velocity_optimization(vehicle_params, general_params, dc);
-
 	t = velocity_optimization_results.t;
 	v = velocity_optimization_results.v;
-
+	
     [cycle, endtime, cycle_name] = form_simulation_cycle(i, drv_mission.dc, t, v);
     
     %% Simulate vehicle
