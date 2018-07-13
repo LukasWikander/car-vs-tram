@@ -112,6 +112,7 @@ for i = simulated_drive_cycles
 	% To outputs
 	output.req_battery_size_energy_kWh = max([output.req_battery_size_energy_kWh req_size_energy_kWh]);
 	output.req_battery_size_chargeTime_kWh = max([output.req_battery_size_chargeTime_kWh req_size_chargeTime_kWh]);
+	output.req_battery_size_chargeTime_kWh = 0;
 	output.req_battery_size_kWh = max([output.req_battery_size_kWh max([req_size_energy_kWh req_size_chargeTime_kWh])]);
 	output.time{i} = Power.time;
     
