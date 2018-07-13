@@ -105,17 +105,26 @@ output.unused_cars = unused_cars;
 % to have it lower than the C-rate. Also, having that number makes it
 % cleaner to calculate the charging station cost (which currently is
 % calculated separately in the cost estimation function using C-rate)
-n_car_chargers = min_number_of_chargers(general_params, car_params, car_freq, ...
-    num_cars, time_hr, n_variations_adjusted, time_per_round_trip_car * 60);
+[n_car_chargers, car_energy_charged_grid, car_energy_discharged_grid, ...
+    car_energy_remaining_grid] = min_number_of_chargers(general_params, ...
+    car_params, car_freq, num_cars, time_hr, n_variations_adjusted, ...
+    time_per_round_trip_car * 60);
 output.n_car_chargers = n_car_chargers;
 output.P_car_charger_kW = car_params.E_battery_size_kWh * general_params.C_rate;
 output.P_car_chargers = output.P_car_charger_kW * n_car_chargers;
-n_tram_chargers = min_number_of_chargers(general_params, tram_params, tram_freq, ...
-    num_trams, time_hr, n_variations_adjusted, time_per_round_trip_tram * 60);
+output.car_energy_charged_grid = car_energy_charged_grid;
+output.car_energy_discharged_grid = car_energy_discharged_grid;
+output.car_energy_remaining_grid = car_energy_remaining_grid;
+[n_tram_chargers, tram_energy_charged_grid, tram_energy_discharged_grid, ...
+    tram_energy_remaining_grid] = min_number_of_chargers(general_params, ...
+    tram_params, tram_freq, num_trams, time_hr, n_variations_adjusted, ...
+    time_per_round_trip_tram * 60);
 output.n_tram_chargers = n_tram_chargers;
 output.P_tram_charger_kW = tram_params.E_battery_size_kWh * general_params.C_rate;
 output.P_tram_chargers = output.P_tram_charger_kW * n_tram_chargers;
-
+output.tram_energy_charged_grid = tram_energy_charged_grid;
+output.tram_energy_discharged_grid = tram_energy_discharged_grid;
+output.tram_energy_remaining_grid = tram_energy_remaining_grid;
 end
 
 function [ freq ] = vehicle_frequence (vehicle_params, num_pass, ...
@@ -143,7 +152,8 @@ for i = 2:n_variations
 end
 end
 
-function [ n_chargers ] = min_number_of_chargers (general_params, ...
+function [ n_chargers, energy_charged_grid, energy_discharged_grid, ...
+    energy_remaining_grid ] = min_number_of_chargers (general_params, ...
     vehicle_params, vehicle_freq, num_vehicles, time_hr, n_variations, ...
     t_round_trip)
 %MIN_NUMBER_OF_CHARGERS Calculates the minimum amount of chargers required
@@ -153,6 +163,9 @@ function [ n_chargers ] = min_number_of_chargers (general_params, ...
 %   to simplify evaluation
 
 n_chargers = num_vehicles;
+energy_charged_grid = zeros(size(vehicle_freq));
+energy_discharged_grid = zeros(size(vehicle_freq));
+energy_remaining_grid = zeros(size(vehicle_freq));
 for i = 1:n_variations
     if 0 == num_vehicles(i)
        n_chargers(i) = 0;
@@ -166,10 +179,15 @@ for i = 1:n_variations
     right = n_chargers(i);
     while (left <= right)
         mid = floor((left + right) / 2);
-        if (check_number_of_chargers(general_params, vehicle_params, ...
-                vehicle_freq(i,:), num_vehicles(i), time_hr, mid, t_round_trip))
+        [ok, energy_charged_hr, energy_discharged_hr, energy_remaining_hr] = ...
+            check_number_of_chargers(general_params, vehicle_params, ...
+            vehicle_freq(i,:), num_vehicles(i), time_hr, mid, t_round_trip)
+        if (ok)
             right = mid - 1;
             n_chargers(i) = mid;
+            energy_charged_grid(i,:) = energy_charged_hr;
+            energy_discharged_grid(i,:) = energy_discharged_hr;
+            energy_remaining_grid(i,:) = energy_remaining_hr;
         else
             left = mid + 1;
         end
@@ -177,8 +195,9 @@ for i = 1:n_variations
 end
 end
 
-function [ ok ] = check_number_of_chargers (general_params, vehicle_params, ...
-    vehicle_freq, num_vehicles, time_hr, number_of_chargers, t_round_trip)
+function [ ok, energy_charged_hr, energy_discharged_hr, energy_remaining_hr ] = ...
+    check_number_of_chargers (general_params, vehicle_params, vehicle_freq, ...
+    num_vehicles, time_hr, number_of_chargers, t_round_trip)
 %CHECK_NUMBER_OF_CHARGERS Checks if this number of chargers is enough
 %   Checks if this number of chargers is enough to perform all the
 %   required vehicle trips and recharge all vehicles completely until
@@ -189,6 +208,9 @@ function [ ok ] = check_number_of_chargers (general_params, vehicle_params, ...
 %   trip iteration, if a vehicle is fully charged, another vehicle may
 %   continue to use that charger for the remaining time.
 
+energy_charged_hr = zeros(numel(time_hr), 1);
+energy_discharged_hr = zeros(numel(time_hr), 1);
+energy_remaining_hr = zeros(numel(time_hr), 1);
 vehicles = ones(num_vehicles,1) * vehicle_params.E_battery_size_kWh;
 prev_hr = time_hr(1) - 1;
 for i = 1:numel(time_hr)
@@ -198,9 +220,11 @@ for i = 1:numel(time_hr)
     curr_hr = time_hr(i);
     if curr_hr > prev_hr + 1
         diff_s = (curr_hr - prev_hr - 1) * 3600;
-        vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
-            general_params.C_rate, number_of_chargers, 0, diff_s);
+        [vehicles, energy_charged] = update_charging(vehicles, ...
+            vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+            number_of_chargers, 0, diff_s);
         vehicles = sort(vehicles);
+        energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
     end
     
     % For each round trip time, charge vehicles with the least
@@ -210,21 +234,27 @@ for i = 1:numel(time_hr)
     iterations = ceil(vehicle_freq(i) / num_vehicles);
     for j = 1:iterations
         trip_vehicles = min(num_vehicles, vehicle_freq(i) - (j-1)*num_vehicles);
-        vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
-            general_params.C_rate, number_of_chargers, trip_vehicles, t_round_trip);
-        [vehicles, ok] = update_discharging(vehicles, ...
+        [vehicles, energy_charged] = update_charging(vehicles, ...
+            vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+            number_of_chargers, trip_vehicles, t_round_trip);
+        [vehicles, ok, energy_discharged] = update_discharging(vehicles, ...
             vehicle_params.E_round_trip_kWh, trip_vehicles);
         if ~ok
             return;
         end
         vehicles = sort(vehicles);
+        energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
+        energy_discharged_hr(i) = energy_discharged_hr(i) + energy_discharged;
     end
     
     % Remainder of hour spent charging all vehicles
     t_remaining = max(0, 3600 - iterations * t_round_trip);
-    vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
-        general_params.C_rate, number_of_chargers, 0, t_remaining);
+    [vehicles, energy_charged] = update_charging(vehicles, ...
+        vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+        number_of_chargers, 0, t_remaining);
     vehicles = sort(vehicles);
+    energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
+    energy_remaining_hr(i) = sum(vehicles);
     prev_hr = curr_hr;
 end
 
@@ -235,11 +265,12 @@ vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
 ok = vehicle_params.E_battery_size_kWh <= max(vehicles);
 end
 
-function [ vehicles ] = update_charging(vehicles, E_max, C_rate, n_chargers, ...
-    n_excluded_vehicles, t_charging)
+function [ vehicles, energy_charged ] = update_charging(vehicles, E_max, ...
+    C_rate, n_chargers, n_excluded_vehicles, t_charging)
 %UPDATE_CHARGING Charge specified vehicles
 %   'vehicles' has to be sorted in ascending order
 
+energy_charged = 0;
 n_vehicles = numel(vehicles);
 if (0 == n_chargers) || (n_vehicles == n_excluded_vehicles)
     return;
@@ -256,6 +287,7 @@ for i = 1:(n_vehicles - n_excluded_vehicles)
     E_diff_max_vehicle = max(0, E_max - E_vehicle);
     E_diff_actual = min(E_diff_max_charger, E_diff_max_vehicle);
     vehicles(i) = E_vehicle + E_diff_actual;
+    energy_charged = energy_charged + E_diff_actual;
     E_chargers_tot = max(0, E_chargers_tot - E_diff_actual);
     if 0 >= E_chargers_tot
        break;
@@ -263,17 +295,20 @@ for i = 1:(n_vehicles - n_excluded_vehicles)
 end
 end
 
-function [ vehicles, ok ] = update_discharging(vehicles, E_rt, n_trip_vehicles)
+function [ vehicles, ok, energy_discharged ] = update_discharging(vehicles, ...
+    E_rt, n_trip_vehicles)
 %UPDATE_DISCHARGING Discharge the specified vehicles
 %   'vehicles' has to be sorted in ascending order
 
 ok = true;
+energy_discharged = 0;
 n_vehicles = numel(vehicles);
 if 0 == n_trip_vehicles
     return
 end;
 for i = (n_vehicles - n_trip_vehicles + 1):n_vehicles
     vehicles(i) = max(0, vehicles(i) - E_rt);
+    energy_discharged = energy_discharged + min(vehicles(i), E_rt);
     if 0 == vehicles(i)
         ok = false;
     end
