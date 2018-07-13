@@ -28,66 +28,75 @@ task.Pemmax = 200000;		% Maximum torque (for grid purposes)
 
 task = dynprog_settings(task, vehicle_params, general_params, dc);
 
-%% Dynamic Programming
-% Gridded states and control signals
-X=linspace(task.Vmin/3.6, task.Vmax/3.6,  50)'; % grid on vehicle speed
-U=linspace(min(task.V.em.Tmin),max(task.V.em.Tmax), 80)'; % grid on EM torque
-Nx=numel(X); Nu=numel(U);
-% Memory allocation
-costmatrix=1e3*ones(task.N+1,Nx);               % initialize the cost matrix with high cost
-costmatrix(task.N+1,:)=[0 1e3*ones(1,Nx-1)];%1e6*(0:Nx-1);             % there is no target cost. Final velocity is not constrained.
+prev_result = check_existing_results(task);
+if isempty(prev_result)
 
-tic;
-% Optimize backwards in travel distance 
-fprintf('%d',task.N)
-for tix=task.N:-1:1    
-    foundfeasx=false;
-	for xix=1:Nx        % loop through gridded state values 
-        v=X(xix);
-        [vupd,Tm,Pb]=updatestates(task,tix,v,U); % update state
-        if ~isempty(vupd)
-            foundfeasx = true;
-            %instcost=task.ds*(task.energypenalty*Pb/3.6e6 + task.traveltimepenalty/3.6)/v ...
-            %    + task.accpenalty*(v-vupd).^2; % consumed el. energy + travel cost + acceleration penalty in [kWh]
-            instcost = dynprog_costfcn(v, vupd, Pb, task);
-			costmatrix(tix,xix)=min(instcost + interp1(X,costmatrix(tix+1,:)',vupd));   % Bellman's principle of optimality
-        end
-	end
-	
-	if task.printprogress
-		for j=0:log10(tix+1)
-			fprintf('\b'); % delete previous counter display
+	%% Dynamic Programming
+	% Gridded states and control signals
+	X=linspace(task.Vmin/3.6, task.Vmax/3.6,  50)'; % grid on vehicle speed
+	U=linspace(min(task.V.em.Tmin),max(task.V.em.Tmax), 80)'; % grid on EM torque
+	Nx=numel(X); Nu=numel(U);
+	% Memory allocation
+	costmatrix=1e3*ones(task.N+1,Nx);               % initialize the cost matrix with high cost
+	costmatrix(task.N+1,:)=[0 1e3*ones(1,Nx-1)];%1e6*(0:Nx-1);             % target cost to constrain final velocity
+
+
+	fprintf('Optimizing velocity profile...\n')
+	% Optimize backwards in travel distance 
+	fprintf('%d',task.N)
+	for tix=task.N:-1:1    
+		foundfeasx=false;
+		for xix=1:Nx        % loop through gridded state values 
+			v=X(xix);
+			[vupd,Tm,Pb]=updatestates(task,tix,v,U); % update state
+			if ~isempty(vupd)
+				foundfeasx = true;
+				%instcost=task.ds*(task.energypenalty*Pb/3.6e6 + task.traveltimepenalty/3.6)/v ...
+				%    + task.accpenalty*(v-vupd).^2; % consumed el. energy + travel cost + acceleration penalty in [kWh]
+				instcost = dynprog_costfcn(v, vupd, Pb, task);
+				costmatrix(tix,xix)=min(instcost + interp1(X,costmatrix(tix+1,:)',vupd));   % Bellman's principle of optimality
+			end
 		end
-		fprintf('%d',tix);
+
+		if task.printprogress
+			for j=0:log10(tix+1)
+				fprintf('\b'); % delete previous counter display
+			end
+			fprintf('%d',tix);
+		end
+
+		if ~foundfeasx
+			error('The problem is infeasible at instance %d!',tix);
+		end
 	end
-	
-    if ~foundfeasx
-        error('The problem is infeasible at instance %d!',tix);
-    end
-end
-fprintf('\bDone!\n')
+	fprintf('\bDone!\n')
 
-% The problem is solved and the optimal policy is within costmatrix. We can
-% now choose a desired initial value and obtain the optimal control
-% trajectory by simulating forward.
-vopt=NaN(task.N+1,1);
-Tmopt=NaN(task.N,1);
-Pbopt=NaN(task.N,1);
-% start from a desired state value
-vopt(1)=task.V0/3.6;
-for tix=1:task.N
-    v=vopt(tix); 
-    [vupd,Tm,Pb]=updatestates(task,tix,v,U);
-    %instcost=task.ds*(task.energypenalty*Pb/3.6e6 + task.traveltimepenalty/3.6)/v ...
-    %    + task.accpenalty*(v-vupd).^2; % consumed el. energy + travel cost + acceleration penalty in [kWh]
-    instcost = dynprog_costfcn(v, vupd, Pb, task);
-	[~,ix]=min(instcost + interp1(X, costmatrix(tix+1,:)', vupd));  % Bellman's principle of optimality
-    Tmopt(tix) = Tm(ix);
-    Pbopt(tix) = Pb(ix);
-    vopt(tix+1)=vupd(ix);
+	% The problem is solved and the optimal policy is within costmatrix. We can
+	% now choose a desired initial value and obtain the optimal control
+	% trajectory by simulating forward.
+	vopt=NaN(task.N+1,1);
+	Tmopt=NaN(task.N,1);
+	Pbopt=NaN(task.N,1);
+	% start from a desired state value
+	vopt(1)=task.V0/3.6;
+	for tix=1:task.N
+		v=vopt(tix); 
+		[vupd,Tm,Pb]=updatestates(task,tix,v,U);
+		%instcost=task.ds*(task.energypenalty*Pb/3.6e6 + task.traveltimepenalty/3.6)/v ...
+		%    + task.accpenalty*(v-vupd).^2; % consumed el. energy + travel cost + acceleration penalty in [kWh]
+		instcost = dynprog_costfcn(v, vupd, Pb, task);
+		[~,ix]=min(instcost + interp1(X, costmatrix(tix+1,:)', vupd));  % Bellman's principle of optimality
+		Tmopt(tix) = Tm(ix);
+		Pbopt(tix) = Pb(ix);
+		vopt(tix+1)=vupd(ix);
+	end
+	thispath = erase(mfilename('fullpath'),mfilename);
+	save([thispath 'probdata/saved/' get_filename(vehicle_params,dc)],'task','vopt','Pbopt','Tmopt')
+else
+	thispath = erase(mfilename('fullpath'),mfilename);
+	fprintf('Found previous optimization result matching specified settings...\n')
+	load([thispath 'probdata/saved/' prev_result],'task','vopt','Pbopt','Tmopt');
 end
-comptime=toc;
-
 %%  Post-treat data 
 % Consumed el. energy
 vopt=vopt(2:end);
@@ -124,8 +133,8 @@ Froll = task.V.chs.m*task.env.gravity*task.V.chs.cr*cos(task.dc.slope);       % 
 %    + diff(vopt)/task.ds.*vopt(1:end-1)*task.V.chs.m);
 
 % Print result
-fprintf('Solved: battery size needed=%1.2f kWh, travel time=%1.0f.%1.0fmin, computation time=%1.2f s\n\n', ...
-    cost/3.6e6,mins,secs,comptime);
+fprintf('Solved: battery size needed=%1.2f kWh, travel time=%1.0f.%1.0fmin\n\n', ...
+    cost/3.6e6,mins,secs);
 
 % save optimal results in a structure
 res.v=vopt;
@@ -140,3 +149,56 @@ res.vref=vref;
 
 end
 
+function existing_file = check_existing_results(task_act)
+savedFiles = dir('probdata/saved');
+for ii = length(savedFiles):-1:1
+	if savedFiles(ii).name(1) == '.'
+		savedFiles(ii) = []; % Remove '.' and '..' from results
+	end
+end
+
+existing_file = [];
+
+for fileNo = 1:length(savedFiles)
+	load(savedFiles(fileNo).name,'task')
+	if tasks_equal(task_act,task)
+		existing_file = savedFiles(fileNo).name;
+	end
+end
+
+end
+
+function equal = tasks_equal(task1,task2)
+equal = false;
+try
+	% If fields have been added
+	if length(fieldnames(task1)) ~= length(fieldnames(task2))
+		return
+	end
+	
+	fnames = fieldnames(task1);
+	for ii = 1:length(fnames)
+		if isstruct(task1.(fnames{ii}))
+			if ~tasks_equal(task1.(fnames{ii}),task2.(fnames{ii}))
+				return
+			end
+		elseif any(task1.(fnames{ii}) ~= task2.(fnames{ii}))
+			return
+		end
+	end
+	equal = true;
+catch
+	equal = false;
+end
+end
+
+function name = get_filename(vehicle_params,dc_act)
+load('dc_AtoB.mat','dc');
+if dc_act.altinit == dc.altinit
+	cyclename = 'AtoB';
+else
+	cyclename = 'BtoA';
+end
+
+name = [vehicle_params.name '_' cyclename '_vel_opt_' datestr(now) '.mat'];
+end

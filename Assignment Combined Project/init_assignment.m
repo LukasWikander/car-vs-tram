@@ -42,6 +42,7 @@ general_params.acc_gravity = 9.81;	% Acceleration of gravity [m/s2]
 
 %% Tram vehicle parameters
 tram_params = struct;
+tram_params.name = 'tram_full';
 tram_params.m_kg = 36800; % Tram weight [kg]
 tram_params.n_pass = 85 + 117; % Seated + standing passenger capacity 
 tram_params.Cd = 1.8; % Tram drag coefficient
@@ -62,6 +63,7 @@ tram_params.energypenalty = 0.1;
 
 %% Car vehicle parameters
 car_params = struct;
+car_params.name = 'car_full';
 car_params.m_kg = 2500; % Car weight [kg]
 car_params.n_pass = 10;	% Passenger capacity
 car_params.Cd = 0.5; % Car drag coefficent
@@ -91,6 +93,7 @@ tram_full_sim_output = vehicle_simulation(tram_params, general_params, drv_missi
 % Empty tram
 fprintf(' --- Empty tram simulation --- \n')
 tram_empty_params = tram_params;
+tram_empty_params.name = 'tram_empty';
 tram_empty_params.n_pass = 0;
 tram_empty_sim_output = vehicle_simulation(tram_empty_params, general_params, drv_mission, pass_flow);
 
@@ -101,6 +104,7 @@ car_full_sim_output = vehicle_simulation(car_params, general_params, drv_mission
 % Empty car
 fprintf(' --- Empty car simulation --- \n')
 car_empty_params = car_params;
+car_empty_params.name = 'car_empty';
 car_empty_params.n_pass = 0;
 car_empty_sim_output = vehicle_simulation(car_empty_params, general_params, drv_mission, pass_flow);
 
