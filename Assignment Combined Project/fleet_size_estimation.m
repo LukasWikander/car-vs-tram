@@ -224,6 +224,8 @@ for i = 1:numel(time_hr)
             vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
             number_of_chargers, 0, diff_s);
         vehicles = sort(vehicles);
+        
+        % Update the energy charged output
         energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
     end
     
@@ -239,12 +241,17 @@ for i = 1:numel(time_hr)
             number_of_chargers, trip_vehicles, t_round_trip);
         [vehicles, ok, energy_discharged] = update_discharging(vehicles, ...
             vehicle_params.E_round_trip_kWh, trip_vehicles);
+        
+        % Update the energy charged / discharged outputs
+        energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
+        energy_discharged_hr(i) = energy_discharged_hr(i) + energy_discharged;
         if ~ok
+            % We break here, but still want to have the correct energy
+            % remaining, for debugging purposes
+            energy_remaining_hr(i) = sum(vehicles);
             return;
         end
         vehicles = sort(vehicles);
-        energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
-        energy_discharged_hr(i) = energy_discharged_hr(i) + energy_discharged;
     end
     
     % Remainder of hour spent charging all vehicles
@@ -253,16 +260,19 @@ for i = 1:numel(time_hr)
         vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
         number_of_chargers, 0, t_remaining);
     vehicles = sort(vehicles);
+    
+    % Update the energy charged / remaining outputs
     energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
     energy_remaining_hr(i) = sum(vehicles);
     prev_hr = curr_hr;
 end
 
-% Need to be able to fully charge during night
-t_night = 3600 * (min(time_hr) + 24 - max(time_hr));
+% Need to be able to fully charge during night (time between the end of the
+% last hour and the beginning of the first hour in the passenger flow)
+t_night = 3600 * max(0,(min(time_hr) + 23 - max(time_hr)));
 vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
     general_params.C_rate, number_of_chargers, 0, t_night);
-ok = vehicle_params.E_battery_size_kWh <= max(vehicles);
+ok = vehicle_params.E_battery_size_kWh <= min(vehicles);
 end
 
 function [ vehicles, energy_charged ] = update_charging(vehicles, E_max, ...
@@ -308,8 +318,9 @@ if 0 == n_trip_vehicles
     return
 end;
 for i = (n_vehicles - n_trip_vehicles + 1):n_vehicles
-    vehicles(i) = max(0, vehicles(i) - E_rt);
-    energy_discharged = energy_discharged + min(vehicles(i), E_rt);
+    E_diff_actual = min(vehicles(i), E_rt);
+    vehicles(i) = max(0, vehicles(i) - E_diff_actual);
+    energy_discharged = energy_discharged + E_diff_actual;
     if 0 >= vehicles(i)
         ok = false;
     end
