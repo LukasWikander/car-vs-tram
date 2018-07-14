@@ -285,7 +285,8 @@ E_chargers_tot = E_diff_max_charger * n_chargers;
 for i = 1:(n_vehicles - n_excluded_vehicles)
     E_vehicle = vehicles(i);
     E_diff_max_vehicle = max(0, E_max - E_vehicle);
-    E_diff_actual = min(E_diff_max_charger, E_diff_max_vehicle);
+    E_diff_actual = min(E_chargers_tot, min(E_diff_max_charger, ...
+        E_diff_max_vehicle));
     vehicles(i) = E_vehicle + E_diff_actual;
     energy_charged = energy_charged + E_diff_actual;
     E_chargers_tot = max(0, E_chargers_tot - E_diff_actual);
@@ -309,7 +310,7 @@ end;
 for i = (n_vehicles - n_trip_vehicles + 1):n_vehicles
     vehicles(i) = max(0, vehicles(i) - E_rt);
     energy_discharged = energy_discharged + min(vehicles(i), E_rt);
-    if 0 == vehicles(i)
+    if 0 >= vehicles(i)
         ok = false;
     end
 end
