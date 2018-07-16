@@ -1,7 +1,7 @@
 function [ output ] = plot_assignment( tram_params, car_params, general_params, drv_mission, pass_flow, tram_simulation_results, car_simulation_results, fleet_info_output, cost_estimation_output)
 %UNTITLED5 Summary of this function goes here
 %   Detailed explanation goes here
-%%
+%% Power profiles
 figure('Name','Power profile tram')
 subplot(211)
 plot(tram_simulation_results.time{1}, (tram_simulation_results.P_traction_W{1}+tram_simulation_results.P_brake_W{1})/1000)
@@ -17,7 +17,7 @@ ylabel('Power [kW]')
 xlabel('Time [s]')
 grid on
 
-%%
+%
 figure('Name','Power profile car')
 subplot(211)
 plot(car_simulation_results.time{1}, (car_simulation_results.P_traction_W{1}+car_simulation_results.P_brake_W{1})/1000)
@@ -33,7 +33,7 @@ ylabel('Power [kW]')
 xlabel('Time [s]')
 grid on
 
-%%
+%% Speed profiles
 figure('Name','Speed profile tram')
 subplot(211)
 plot(tram_simulation_results.time{1}, tram_simulation_results.speed_kmh{1})
@@ -49,7 +49,7 @@ ylabel('Speed [km/h]')
 xlabel('Time [s]')
 grid on
 
-%%
+%
 figure('Name','Speed profile car')
 subplot(211)
 plot(car_simulation_results.time{1}, car_simulation_results.speed_kmh{1})
@@ -66,7 +66,7 @@ xlabel('Time [s]')
 grid on
 
 
-%%
+%% Lifetime costs
 dy = 0:365*80;
 daily_cost_grid = cost_estimation_output.fleet_cost_dy * dy;
 dy_size = size(dy);
@@ -97,7 +97,7 @@ xlabel('Time [years]')
 ylabel('Number of trams in mix')
 zlabel('Cost [MSEK]')
 
-%%
+% Same but contour plot
 figure('Name','Isocost levels')
 [Cp,hp] = contour(XG, YG, Z, 20, 'ShowText', 'on');
 xlabel('Time [years]')
@@ -108,6 +108,75 @@ grid on
 hold on
 hnd=plot(dy/365,YM,'r','LineWidth',1.5);
 legend(hnd,'Cost minimizing mix','Location','northwest')
+
+
+%% Fleet mix
+figure('Name','Fleet mix')
+plot(fleet_info_output.num_trams,fleet_info_output.num_cars,'rx')
+xlabel('Number of trams')
+ylabel('Number of cars')
+grid on
+
+%% Energy stored in fleet
+[~,TG] = meshgrid(pass_flow.x, fleet_info_output.num_trams);
+[HG,CG] = meshgrid(pass_flow.x, fleet_info_output.num_cars);
+
+figure('Name','Energy stored in fleet')
+surf(HG,TG,(fleet_info_output.car_energy_remaining_grid+fleet_info_output.tram_energy_remaining_grid));
+xlabel('Hour of day')
+xlim([4 24])
+ylabel('Number of trams')
+zlabel('Energy remaining [kWh]')
+ax = gca;
+ax.XAxis.TickValues = pass_flow.x;
+ax.YAxis.TickValues = fleet_info_output.num_trams;
+ax.YAxis.Direction = 'reverse';
+title('Total energy stored in fleet')
+
+%% Average energy content of vehicle
+figure('Name','Energy stored on average')
+subplot(121)
+surf(HG,TG,fleet_info_output.tram_energy_remaining_grid./fleet_info_output.num_trams')
+ax = gca;
+ax.XAxis.TickValues = pass_flow.x;
+ax.YAxis.TickValues = fleet_info_output.num_trams;
+ax.YAxis.Direction = 'reverse';
+[az,el] = view;
+view(az+60,el);
+xlabel('Hour of day')
+xlim([4 24])
+ylabel('Number of trams')
+zlabel('Energy stored [kWh]')
+title('Average energy stored per tram')
+
+subplot(122)
+surf(HG,CG,fleet_info_output.car_energy_remaining_grid./fleet_info_output.num_cars')
+ax = gca;
+ax.XAxis.TickValues = pass_flow.x;
+ax.YAxis.TickValues = fliplr(fleet_info_output.num_cars);
+ax.YAxis.Direction = 'reverse';
+[az,el] = view;
+view(az+60,el);
+xlabel('Hour of day')
+xlim([4 24])
+ylabel('Number of cars')
+zlabel('Energy stored [kWh]')
+title('Average energy stored per car')
+
+
+%% Cost of charging stations
+figure('Name','Cost of charging stations')
+plot(fleet_info_output.num_trams, (fleet_info_output.n_car_chargers*fleet_info_output.P_car_charger_kW ...
+	+ fleet_info_output.n_tram_chargers*fleet_info_output.P_tram_charger_kW)*general_params.c_station_kW,'LineWidth',1.5)
+hold on
+plot(fleet_info_output.num_trams, fleet_info_output.n_tram_chargers*fleet_info_output.P_tram_charger_kW*general_params.c_station_kW,'--','LineWidth',1.5)
+plot(fleet_info_output.num_trams, fleet_info_output.n_car_chargers*fleet_info_output.P_car_charger_kW*general_params.c_station_kW,'--','LineWidth',1.5)
+legend({'Cost of charging stations','Cost of tram charging stations','Cost of car charging stations'})
+
+xlabel('Number of trams')
+ylabel('Cost [SEK]')
+grid on
+
 
 end
 
