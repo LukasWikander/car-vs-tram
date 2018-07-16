@@ -106,7 +106,8 @@ output.unused_cars = unused_cars;
 % cleaner to calculate the charging station cost (which currently is
 % calculated separately in the cost estimation function using C-rate)
 [n_car_chargers, car_energy_charged_grid, car_energy_discharged_grid, ...
-    car_energy_remaining_grid] = min_number_of_chargers(general_params, ...
+    car_energy_remaining_grid, car_constraint_compliance] = ...
+    min_number_of_chargers(general_params, ...
     car_params, car_freq, num_cars, time_hr, n_variations_adjusted, ...
     time_per_round_trip_car * 60);
 output.n_car_chargers = n_car_chargers;
@@ -115,8 +116,10 @@ output.P_car_chargers = output.P_car_charger_kW * n_car_chargers;
 output.car_energy_charged_grid = car_energy_charged_grid;
 output.car_energy_discharged_grid = car_energy_discharged_grid;
 output.car_energy_remaining_grid = car_energy_remaining_grid;
+output.car_constraint_compliance = car_constraint_compliance;
 [n_tram_chargers, tram_energy_charged_grid, tram_energy_discharged_grid, ...
-    tram_energy_remaining_grid] = min_number_of_chargers(general_params, ...
+    tram_energy_remaining_grid, tram_constraint_compliance] = ...
+    min_number_of_chargers(general_params, ...
     tram_params, tram_freq, num_trams, time_hr, n_variations_adjusted, ...
     time_per_round_trip_tram * 60);
 output.n_tram_chargers = n_tram_chargers;
@@ -125,6 +128,9 @@ output.P_tram_chargers = output.P_tram_charger_kW * n_tram_chargers;
 output.tram_energy_charged_grid = tram_energy_charged_grid;
 output.tram_energy_discharged_grid = tram_energy_discharged_grid;
 output.tram_energy_remaining_grid = tram_energy_remaining_grid;
+output.tram_constraint_compliance = tram_constraint_compliance;
+output.fleet_constraint_complience = tram_constraint_compliance ...
+    & car_constraint_compliance;
 end
 
 function [ freq ] = vehicle_frequence (vehicle_params, num_pass, ...
@@ -153,22 +159,24 @@ end
 end
 
 function [ n_chargers, energy_charged_grid, energy_discharged_grid, ...
-    energy_remaining_grid ] = min_number_of_chargers (general_params, ...
-    vehicle_params, vehicle_freq, num_vehicles, time_hr, n_variations, ...
-    t_round_trip)
+    energy_remaining_grid, constraint_compliance ] = min_number_of_chargers ...
+    (general_params, vehicle_params, vehicle_freq, num_vehicles, time_hr, ...
+    n_variations, t_round_trip)
 %MIN_NUMBER_OF_CHARGERS Calculates the minimum amount of chargers required
 %   For this vehicle type, calculate the minimum number of chargers
 %   required fo each mix of vehicles
 %   Assumption: All chargers situated at exactly one of the destinations,
 %   to simplify evaluation
 
-n_chargers = num_vehicles;
-energy_charged_grid = zeros(size(vehicle_freq));
-energy_discharged_grid = zeros(size(vehicle_freq));
-energy_remaining_grid = zeros(size(vehicle_freq));
+n_chargers = NaN(size(num_vehicles));
+energy_charged_grid = NaN(size(vehicle_freq));
+energy_discharged_grid = NaN(size(vehicle_freq));
+energy_remaining_grid = NaN(size(vehicle_freq));
+constraint_compliance = false(size(num_vehicles));
 for i = 1:n_variations
     if 0 == num_vehicles(i)
        n_chargers(i) = 0;
+       constraint_compliance(i) = true;
        continue;
     end
     
@@ -176,7 +184,7 @@ for i = 1:n_variations
     % The assumption is that a valid number of chargers exist in the search
     % space, i.e. at the maximum of one charger per vehicle
     left = 0;
-    right = n_chargers(i);
+    right = num_vehicles(i);
     while (left <= right)
         mid = floor((left + right) / 2);
         [ok, energy_charged_hr, energy_discharged_hr, energy_remaining_hr] = ...
@@ -185,6 +193,7 @@ for i = 1:n_variations
         if (ok)
             right = mid - 1;
             n_chargers(i) = mid;
+            constraint_compliance(i) = true;
             energy_charged_grid(i,:) = energy_charged_hr;
             energy_discharged_grid(i,:) = energy_discharged_hr;
             energy_remaining_grid(i,:) = energy_remaining_hr;
