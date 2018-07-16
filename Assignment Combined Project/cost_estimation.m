@@ -83,13 +83,13 @@ fprintf('Energy used during the round trip driving cycle: \n Traction=%1.2f kWh,
     vehicle_simulation_output.E_traction_tot_kWh,vehicle_simulation_output.E_brake_tot_kWh);
 
 %% Cost of battery
-EBatt_kWh = vehicle_simulation_output.req_battery_size_energy_kWh;
-c_batt = general_params.c_batt_kWh*vehicle_simulation_output.req_battery_size_kWh;
+EBatt_kWh = 2*vehicle_simulation_output.req_battery_size_energy_kWh;
+c_batt = general_params.c_batt_kWh*vehicle_params.E_battery_size_kWh;
 output.c_batt = c_batt;
 mBatt_kg = vehicle_simulation_output.req_battery_size_kWh/general_params.e_batt_kWh;
 tCharge = vehicle_simulation_output.t_charging_round_trip;
 fprintf('Battery parameters: \n Required capacity=%1.2f kWh, Actual capacity=%1.2f kWh, Weight=%1.2f kg, Cost=%1.2f SEK, Charge time=%1.2f min \n', ...
-    EBatt_kWh,vehicle_simulation_output.req_battery_size_kWh,mBatt_kg,c_batt,tCharge/60);
+    EBatt_kWh,vehicle_params.E_battery_size_kWh,mBatt_kg,c_batt,tCharge/60);
 
 %% Cost of energy used
 c_E_round_trip = (vehicle_simulation_output.E_traction_tot_kWh-vehicle_simulation_output.E_brake_tot_kWh)*general_params.c_E_kWh;
