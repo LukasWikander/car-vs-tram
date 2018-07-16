@@ -136,32 +136,34 @@ title('Total energy stored in fleet')
 %% Average energy content of vehicle
 figure('Name','Energy stored on average')
 subplot(121)
-surf(HG,TG,fleet_info_output.tram_energy_remaining_grid./fleet_info_output.num_trams')
+surf(HG,TG,100*(fleet_info_output.tram_energy_remaining_grid./fleet_info_output.num_trams')./tram_params.E_battery_size_kWh)
 ax = gca;
 ax.XAxis.TickValues = pass_flow.x;
 ax.YAxis.TickValues = fleet_info_output.num_trams;
 ax.YAxis.Direction = 'reverse';
+ax.ZAxis.TickValues = [0:10:100];
 [az,el] = view;
 view(az+60,el);
 xlabel('Hour of day')
 xlim([4 24])
 ylabel('Number of trams')
-zlabel('Energy stored [kWh]')
-title('Average energy stored per tram')
+zlabel('State of charge [%]')
+title('Average SoC per tram')
 
 subplot(122)
-surf(HG,CG,fleet_info_output.car_energy_remaining_grid./fleet_info_output.num_cars')
+surf(HG,CG,100*(fleet_info_output.car_energy_remaining_grid./fleet_info_output.num_cars')./car_params.E_battery_size_kWh)
 ax = gca;
 ax.XAxis.TickValues = pass_flow.x;
 ax.YAxis.TickValues = fliplr(fleet_info_output.num_cars);
 ax.YAxis.Direction = 'reverse';
+ax.ZAxis.TickValues = [0:10:100];
 [az,el] = view;
 view(az+60,el);
 xlabel('Hour of day')
 xlim([4 24])
 ylabel('Number of cars')
-zlabel('Energy stored [kWh]')
-title('Average energy stored per car')
+zlabel('State of charge [%]')
+title('Average SoC per car')
 
 
 %% Cost of charging stations
