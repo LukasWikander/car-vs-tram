@@ -110,14 +110,14 @@ for i = simulated_drive_cycles
 	% To outputs
 	output.req_battery_size_energy_kWh = max([output.req_battery_size_energy_kWh req_size_energy_kWh]);
 	output.req_battery_size_chargeTime_kWh = max([output.req_battery_size_chargeTime_kWh req_size_chargeTime_kWh]);
-	output.req_battery_size_chargeTime_kWh = 0;
-	output.req_battery_size_kWh = max([output.req_battery_size_kWh max([req_size_energy_kWh req_size_chargeTime_kWh])]);
+	%output.req_battery_size_kWh = max([output.req_battery_size_kWh max([req_size_energy_kWh req_size_chargeTime_kWh])]);
+	output.req_battery_size_kWh = output.req_battery_size_energy_kWh;
 	output.time{i} = Power.time;
     
 end
 % These parameters can only be known when battery size is known
 for i = simulated_drive_cycles
-	output.t_charging(i) = max([vehicle_params.t_unload output.req_recharge_energy_kWh(i)/output.req_battery_size_kWh*t_charge_full_h *60*60]);
+	output.t_charging(i) = vehicle_params.t_unload;%max([vehicle_params.t_unload output.req_recharge_energy_kWh(i)/output.req_battery_size_kWh*t_charge_full_h *60*60]);
 	output.req_charge_power_kW(i) = output.req_recharge_energy_kWh(i)/(output.t_charging(i) /60/60);
 end
 output.t_charging_round_trip = sum(output.t_charging);
