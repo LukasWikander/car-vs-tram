@@ -1,4 +1,3 @@
-function total_cost = init_assignment()
 
 clear all
 close all
@@ -130,5 +129,3 @@ cost_estimation_output = cost_estimation(tram_params, car_params, general_params
 plot_assignment(tram_params, car_params, general_params, drv_mission, pass_flow, tram_full_sim_output, car_full_sim_output, fleet_info_output, cost_estimation_output);
 
 fprintf('Done!\n');
-
-end
