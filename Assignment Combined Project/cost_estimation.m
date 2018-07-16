@@ -73,7 +73,7 @@ output.l_life_car_yr = general_params.l_life_car_km ./ distance_driven_per_car_a
 end
 
 function [ output ] = drive_cycle_cost(vehicle_params, general_params, vehicle_simulation_output)
-
+%% Cost of motor
 fprintf('Maximum power used during the round trip driving cycle: \n Traction=%1.2f kW, Braking=%1.2f kW \n', ...
 	vehicle_simulation_output.P_traction_max_kW,vehicle_simulation_output.P_brake_max_kW);
 c_motor = vehicle_simulation_output.P_max_kW * general_params.c_motor_kW;
@@ -82,6 +82,7 @@ fprintf('Cost of motor and power electronics to supply required traction and reg
 fprintf('Energy used during the round trip driving cycle: \n Traction=%1.2f kWh, Braking=%1.2f kWh \n', ...
     vehicle_simulation_output.E_traction_tot_kWh,vehicle_simulation_output.E_brake_tot_kWh);
 
+%% Cost of battery
 EBatt_kWh = vehicle_simulation_output.req_battery_size_energy_kWh;
 c_batt = general_params.c_batt_kWh*vehicle_simulation_output.req_battery_size_kWh;
 output.c_batt = c_batt;
@@ -90,14 +91,12 @@ tCharge = vehicle_simulation_output.t_charging_round_trip;
 fprintf('Battery parameters: \n Required capacity=%1.2f kWh, Actual capacity=%1.2f kWh, Weight=%1.2f kg, Cost=%1.2f SEK, Charge time=%1.2f min \n', ...
     EBatt_kWh,vehicle_simulation_output.req_battery_size_kWh,mBatt_kg,c_batt,tCharge/60);
 
-fprintf('Charging station parameters: \n Power (A)=%1.2f kW, Power (B)=%1.2f kW, Cost per station=%1.2f SEK \n',...
-	vehicle_simulation_output.req_charge_power_kW(2), vehicle_simulation_output.req_charge_power_kW(1),...
-	sum(vehicle_simulation_output.req_charge_power_kW)*general_params.c_station_kW);
-
+%% Cost of energy used
 c_E_round_trip = (vehicle_simulation_output.E_traction_tot_kWh-vehicle_simulation_output.E_brake_tot_kWh)*general_params.c_E_kWh;
 output.c_E_round_trip = c_E_round_trip;
 fprintf('Cost of energy used: \n %1.2f SEK \n',c_E_round_trip);
 
+%% Cost of maintenance
 c_M_round_trip = vehicle_params.c_maintenance * general_params.l_round_trip /1000;
 output.c_M_round_trip = c_M_round_trip;
 fprintf('Cost of maintenance: \n %1.2f SEK \n', c_M_round_trip);
