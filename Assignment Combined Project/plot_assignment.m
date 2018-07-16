@@ -172,7 +172,8 @@ hold on
 plot(fleet_info_output.num_trams, fleet_info_output.n_tram_chargers*fleet_info_output.P_tram_charger_kW*general_params.c_station_kW,'--','LineWidth',1.5)
 plot(fleet_info_output.num_trams, fleet_info_output.n_car_chargers*fleet_info_output.P_car_charger_kW*general_params.c_station_kW,'--','LineWidth',1.5)
 legend({'Cost of charging stations','Cost of tram charging stations','Cost of car charging stations'})
-
+ax = gca;
+ax.XAxis.TickValues = fleet_info_output.num_trams;
 xlabel('Number of trams')
 ylabel('Cost [SEK]')
 grid on
