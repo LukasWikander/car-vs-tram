@@ -1,3 +1,5 @@
 *.asv
 .DS_Store
 *~
+Assignment Combined Project/probdata/saved/*
+!Assignment Combined Project/probdata/saved/.gitkeep
