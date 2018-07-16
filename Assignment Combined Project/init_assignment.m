@@ -112,11 +112,11 @@ car_empty_sim_output = vehicle_simulation(car_empty_params, general_params, drv_
 %% Fleet size estimation
 tram_params.t_round_trip = tram_full_sim_output.t_round_trip;
 tram_params.t_charging_round_trip = tram_full_sim_output.t_charging_round_trip;
-tram_params.E_battery_size_kWh = 5*2*tram_full_sim_output.req_battery_size_kWh;
+tram_params.E_battery_size_kWh = 4*2*tram_full_sim_output.req_battery_size_kWh;
 tram_params.E_round_trip_kWh = tram_full_sim_output.E_tot_kWh;
 car_params.t_round_trip = car_full_sim_output.t_round_trip;
 car_params.t_charging_round_trip = car_full_sim_output.t_charging_round_trip;
-car_params.E_battery_size_kWh = 5*2*car_full_sim_output.req_battery_size_kWh;
+car_params.E_battery_size_kWh = 1.75*2*car_full_sim_output.req_battery_size_kWh;
 car_params.E_round_trip_kWh = car_full_sim_output.E_tot_kWh;
 fleet_info_output = fleet_size_estimation(tram_params, car_params, general_params, drv_mission, pass_flow, general_params.n_variations);
 
@@ -124,6 +124,19 @@ fleet_info_output = fleet_size_estimation(tram_params, car_params, general_param
 % TODO: Use empty vehicle simulation to get more accurate costs
 cost_estimation_output = cost_estimation(tram_params, car_params, general_params, tram_full_sim_output, car_full_sim_output, fleet_info_output);
 
+
+%% Warn if unable to manage with selected battery sizes
+if any(fleet_info_output.fleet_constraint_compliance == 0)
+	n_noncompliant_cars = sum(fleet_info_output.car_constraint_compliance == 0);
+	n_noncompliant_trams = sum(fleet_info_output.tram_constraint_compliance == 0);
+	if n_noncompliant_cars
+		warning(['Infeasible with selected car battery size for ' num2str(n_noncompliant_cars) ' configurations.'])
+	end
+	if n_noncompliant_trams
+		warning(['Infeasible with selected tram battery size for ' num2str(n_noncompliant_trams) ' configurations.'])
+	end
+	
+end
 %% Plots
 % TODO: Plots
 plot_assignment(tram_params, car_params, general_params, drv_mission, pass_flow, tram_full_sim_output, car_full_sim_output, fleet_info_output, cost_estimation_output);
