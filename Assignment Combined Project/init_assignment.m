@@ -24,13 +24,14 @@ general_params.e_batt_kWh = 0.1; % Energy density of battery [kWh/kg]
 general_params.c_motor_kW = 70+50; % Cost of motor + cost of power electronics [SEK/kW]
 general_params.C_rate = 1.5; % Charge C rate [A/Ah]
 general_params.c_station_kW = 2000; % Charge station cost [SEK/kW]
+general_params.c_stop = 3.3*1e6; % Tram or car stop (station) [SEK/location]
 general_params.n_variations = 10; % Number of tram variations (grid size)
 
 %% Assumed additional parameters
 general_params.V_batt = 400;	% Battery pack voltage [V]
 general_params.l_trip = drv_mission.dc.s(end); % Length of trip [m]
 general_params.l_round_trip = 2*drv_mission.dc.s(end); % Length of round trip [m]
-general_params.c_tram_track_km = 100e6; % Cost of track [SEK/km]
+general_params.c_tram_track_km = 112e6; % Cost of track [SEK/km]
 general_params.c_tram_track_mnt_yr = (368+172)/5/249*10*1e6; % Cost of track yearly when in use [SEK/km/year]
 general_params.l_life_tram_yr = 40; % Lifetime of tram [year]
 general_params.l_life_car_km = 160000; % Expected mileage of car [km]
@@ -50,6 +51,7 @@ tram_params.rw = 0.2;	% Tram wheel radius
 tram_params.t_unload = 2 * 60; % Time at stops [s]
 tram_params.c_purchase = 1.08*37600000/18*11.75 + 3500 + 48000; % Purchase cost of tram + gear box + AD components [SEK]
 tram_params.c_maintenance = 1.3; % Maintenance cost of tram + track per km driven [SEK/km]
+tram_params.c_parking = (67.5/7)*1e6; % Parking cost (tram depot) [SEK/vehicle] (Not realistic, probably ~ 40 + 4*n_trams)
 tram_params.v_max_kmh = 70; % Maximum allowed velocity [km/h] (see assignment)
 tram_params.P_max_kW = inf; % Maximum power [kW]
 
@@ -69,6 +71,7 @@ car_params.Cr = 0.02;	% Car rolling resistance
 car_params.t_unload = 5*60;   % Time at stops [s]
 car_params.c_purchase = 300000+3500+48000; % Purchase cost of car (base + gear box + AD components) [SEK]
 car_params.c_maintenance = 0.277; % Maintenance cost of car per km driven [SEK/km]
+car_params.c_parking = 0; % Parking cost [SEK/vehicle] (TODO)
 car_params.v_max_kmh = 70; % Maximum allowed velocity [km/h] (see assignment)
 car_params.P_max_kW = inf; % Maximum power [kW]
 
@@ -104,9 +107,13 @@ car_empty_sim_output = vehicle_simulation(car_empty_params, general_params, drv_
 %% Fleet size estimation
 tram_params.t_round_trip = tram_full_sim_output.t_round_trip;
 tram_params.t_charging_round_trip = tram_full_sim_output.t_charging_round_trip;
+tram_params.E_battery_size_kWh = tram_full_sim_output.req_battery_size_kWh;
+tram_params.E_round_trip_kWh = tram_full_sim_output.E_tot_kWh;
 car_params.t_round_trip = car_full_sim_output.t_round_trip;
 car_params.t_charging_round_trip = car_full_sim_output.t_charging_round_trip;
-fleet_info_output = fleet_size_estimation(tram_params, car_params, drv_mission, pass_flow, general_params.n_variations);
+car_params.E_battery_size_kWh = car_full_sim_output.req_battery_size_kWh;
+car_params.E_round_trip_kWh = car_full_sim_output.E_tot_kWh;
+fleet_info_output = fleet_size_estimation(tram_params, car_params, general_params, drv_mission, pass_flow, general_params.n_variations);
 
 %% Cost estimation
 % TODO: Use empty vehicle simulation to get more accurate costs
