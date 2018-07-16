@@ -113,10 +113,17 @@ output.unused_cars = unused_cars;
 output.n_car_chargers = n_car_chargers;
 output.P_car_charger_kW = car_params.E_battery_size_kWh * general_params.C_rate;
 output.P_car_chargers = output.P_car_charger_kW * n_car_chargers;
+
+no_car_idx = find(num_cars == 0);
+car_energy_charged_grid(no_car_idx,:) = 0;
+car_energy_discharged_grid(no_car_idx,:) = 0;
+car_energy_remaining_grid(no_car_idx,:) = 0;
+
 output.car_energy_charged_grid = car_energy_charged_grid;
 output.car_energy_discharged_grid = car_energy_discharged_grid;
 output.car_energy_remaining_grid = car_energy_remaining_grid;
 output.car_constraint_compliance = car_constraint_compliance;
+
 [n_tram_chargers, tram_energy_charged_grid, tram_energy_discharged_grid, ...
     tram_energy_remaining_grid, tram_constraint_compliance] = ...
     min_number_of_chargers(general_params, ...
@@ -125,11 +132,18 @@ output.car_constraint_compliance = car_constraint_compliance;
 output.n_tram_chargers = n_tram_chargers;
 output.P_tram_charger_kW = tram_params.E_battery_size_kWh * general_params.C_rate;
 output.P_tram_chargers = output.P_tram_charger_kW * n_tram_chargers;
+
+no_tram_idx = find(num_trams == 0);
+tram_energy_charged_grid(no_tram_idx,:) = 0;
+tram_energy_discharged_grid(no_tram_idx,:) = 0;
+tram_energy_remaining_grid(no_tram_idx,:) = 0;
+
 output.tram_energy_charged_grid = tram_energy_charged_grid;
 output.tram_energy_discharged_grid = tram_energy_discharged_grid;
 output.tram_energy_remaining_grid = tram_energy_remaining_grid;
 output.tram_constraint_compliance = tram_constraint_compliance;
-output.fleet_constraint_complience = tram_constraint_compliance ...
+output.car_constraint_compliance = car_constraint_compliance;
+output.fleet_constraint_compliance = tram_constraint_compliance ...
     & car_constraint_compliance;
 end
 
