@@ -141,7 +141,7 @@ ax = gca;
 ax.XAxis.TickValues = pass_flow.x;
 ax.YAxis.TickValues = fleet_info_output.num_trams;
 ax.YAxis.Direction = 'reverse';
-ax.ZAxis.TickValues = [0:10:100];
+ax.ZAxis.TickValues = 0:10:100;
 [az,el] = view;
 view(az+60,el);
 xlabel('Hour of day')
@@ -156,7 +156,7 @@ ax = gca;
 ax.XAxis.TickValues = pass_flow.x;
 ax.YAxis.TickValues = fliplr(fleet_info_output.num_cars);
 ax.YAxis.Direction = 'reverse';
-ax.ZAxis.TickValues = [0:10:100];
+ax.ZAxis.TickValues = 0:10:100;
 [az,el] = view;
 view(az+60,el);
 xlabel('Hour of day')
