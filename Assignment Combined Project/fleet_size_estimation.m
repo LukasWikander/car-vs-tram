@@ -203,7 +203,7 @@ for i = 1:n_variations
         mid = floor((left + right) / 2);
         [ok, energy_charged_hr, energy_discharged_hr, energy_remaining_hr] = ...
             check_number_of_chargers(general_params, vehicle_params, ...
-            vehicle_freq(i,:), num_vehicles(i), time_hr, mid, t_round_trip)
+            vehicle_freq(i,:), num_vehicles(i), time_hr, mid, t_round_trip);
         if (ok)
             right = mid - 1;
             n_chargers(i) = mid;
@@ -339,7 +339,7 @@ energy_discharged = 0;
 n_vehicles = numel(vehicles);
 if 0 == n_trip_vehicles
     return
-end;
+end
 for i = (n_vehicles - n_trip_vehicles + 1):n_vehicles
     E_diff_actual = min(vehicles(i), E_rt);
     vehicles(i) = max(0, vehicles(i) - E_diff_actual);
