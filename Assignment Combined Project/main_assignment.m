@@ -35,8 +35,8 @@ tram_params.m_kg = 36800; % Tram weight [kg]
 tram_params.n_pass = 85 + 117; % Seated + standing passenger capacity 
 tram_params.Cd = 1.8; % Tram drag coefficient
 tram_params.Ad = 3.32*(1.435+0.4); % Tram frontal area
-tram_params.Cr = 0.001; % Tram wheel rolling resistance
 tram_params.rw = 0.2;	% Tram wheel radius
+tram_params.Cr = 0.001; % Tram wheel rolling resistance
 tram_params.t_unload = 2 * 60; % Time at stops [s]
 tram_params.c_purchase = 1.08*37600000/18*11.75 + 3500 + 48000; % Purchase cost of tram + gear box + AD components [SEK]
 tram_params.c_maintenance = 1.3; % Maintenance cost of tram + track per km driven [SEK/km]
@@ -72,14 +72,15 @@ car_params.energypenalty = 0.1;
 
 %% Run simulation with provided parameters
 clc
-init_assignment(general_params,tram_params,car_params,true);
+output = init_assignment(general_params,tram_params,car_params,true);
 
 
 %% Sensitivity analysis: general_params
 clc
 sensitivity = sensitivity_analysis(general_params,tram_params,car_params);
 
-
+%%
+plot_sensitivity(sensitivity)
 
 
 
