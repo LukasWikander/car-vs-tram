@@ -51,53 +51,6 @@ output.num_cars = num_cars;
 flow_cap_hr_total       = flow_cap_hr_tram + num_cars * car_params.n_pass * num_round_trip_hr_car;
 output.flow_cap_hr_total = flow_cap_hr_total;
 
-%% Fleet planning
-
-num_trams_grid = meshgrid(num_trams, time_hr);
-num_trams_grid = transpose(num_trams_grid);
-output.num_trams_grid = num_trams_grid;
-
-num_cars_grid = meshgrid(num_cars, time_hr);
-num_cars_grid = transpose(num_cars_grid);
-output.num_cars_grid = num_cars_grid;
-
-pass_flow_A2B = transpose(from_A2B);
-pass_flow_A2B = repmat(pass_flow_A2B, n_variations_adjusted, 1);
-output.pass_flow_A2B = pass_flow_A2B;
-
-pass_flow_B2A = transpose(from_B2A);
-pass_flow_B2A = repmat(pass_flow_B2A, n_variations_adjusted, 1);
-output.pass_flow_B2A = pass_flow_B2A;
-
-pass_flow = max(pass_flow_A2B, pass_flow_B2A);
-output.pass_flow = pass_flow;
-
-% Tram frequency from A to B
-tram_freq_A2B = vehicle_frequence(tram_params, pass_flow_A2B, num_round_trip_hr_tram, num_trams_grid, time_hr, n_variations_adjusted);
-output.tram_freq_A2B = tram_freq_A2B;
-% Tram frequency from B to A
-tram_freq_B2A = vehicle_frequence(tram_params, pass_flow_B2A, num_round_trip_hr_tram, num_trams_grid, time_hr, n_variations_adjusted);
-output.tram_freq_B2A = tram_freq_B2A;
-
-% Tram frequency including tram returning empty
-tram_freq = max(tram_freq_A2B, tram_freq_B2A);
-utilization_tram = round ( 100 * tram_freq ./ num_trams_grid /num_round_trip_hr_tram );
-empty_tram_A2B = tram_freq - tram_freq_A2B;
-empty_tram_B2A = tram_freq - tram_freq_B2A;
-output.tram_freq = tram_freq;
-output.utilization_tram = utilization_tram;
-output.empty_tram_A2B = empty_tram_A2B;
-output.empty_tram_B2A = empty_tram_B2A;
-
-% Rest passenger flow
-pass_flow_rest = max(0, pass_flow - tram_freq * tram_params.n_pass);
-output.pass_flow_rest = pass_flow_rest;
-
-% Car frequency
-car_freq = ceil(pass_flow_rest / car_params.n_pass);
-unused_cars = num_cars_grid - car_freq;
-output.car_freq = car_freq;
-output.unused_cars = unused_cars;
 
 %% Fleet planning
 
