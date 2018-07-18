@@ -90,10 +90,10 @@ if isempty(prev_result)
 		Pbopt(tix) = Pb(ix);
 		vopt(tix+1)=vupd(ix);
 	end
-	thispath = erase(mfilename('fullpath'),mfilename);
+	thispath = regexprep(mfilename('fullpath'),mfilename,'','ignorecase');
 	save([thispath 'probdata/saved/' get_filename(vehicle_params,dc)],'task','vopt','Pbopt','Tmopt')
 else
-	thispath = erase(mfilename('fullpath'),mfilename);
+	thispath = regexprep(mfilename('fullpath'),mfilename,'','ignorecase');
 	fprintf('Found previous optimization result matching specified settings...\n')
 	load([thispath 'probdata/saved/' prev_result],'task','vopt','Pbopt','Tmopt');
 end
@@ -200,5 +200,6 @@ else
 	cyclename = 'BtoA';
 end
 
-name = [vehicle_params.name '_' cyclename '_vel_opt_' datestr(now) '.mat'];
+% Use ISO 8601 time (without any special characters for compatibility)
+name = [vehicle_params.name '_' cyclename '_vel_opt_' datestr(now, 30) '.mat'];
 end
