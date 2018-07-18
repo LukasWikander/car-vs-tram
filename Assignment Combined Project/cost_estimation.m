@@ -5,12 +5,12 @@ function [ output ] = cost_estimation( tram_params, car_params, general_params, 
 output = struct;
 
 fprintf('\n--Tram round trip drive cycle cost calculation--\n');
-car_drive_cycle_cost = drive_cycle_cost(tram_params, general_params, tram_simulation_output);
-output.car_drive_cycle_cost = car_drive_cycle_cost;
+tram_drive_cycle_cost = drive_cycle_cost(tram_params, general_params, tram_simulation_output);
+output.tram_drive_cycle_cost = tram_drive_cycle_cost;
 
 fprintf('\n--Car round trip drive cycle cost calculation--\n');
-tram_drive_cycle_cost = drive_cycle_cost(car_params, general_params, car_simulation_output);
-output.tram_drive_cycle_cost = tram_drive_cycle_cost;
+car_drive_cycle_cost = drive_cycle_cost(car_params, general_params, car_simulation_output);
+output.car_drive_cycle_cost = car_drive_cycle_cost;
 
 fprintf('\n--Operational day cost--\n');
 tram_fleet_cost_grid = fleet_info_output.tram_freq * (tram_drive_cycle_cost.c_E_round_trip + tram_drive_cycle_cost.c_M_round_trip);
