@@ -102,77 +102,72 @@ temp = pass_flow_rest_B2A < 0;
 pass_flow_rest_B2A(temp) = 0;
 output.pass_flow_rest = pass_flow_rest;
 
-n_pass = car_params.n_pass;
-car_trips_A2B = pass_flow_rest_A2B /n_pass;
-car_trips_B2A = pass_flow_rest_B2A /n_pass;
+car_n_pass = car_params.n_pass;
+car_full_trips_A2B = (pass_flow_rest_A2B / car_n_pass);
+car_full_trips_B2A = (pass_flow_rest_B2A / car_n_pass);
 
-% All Cars come back to A at the end of day 
+% All cars come back to A at the end of day 
 % Flow capacity A start: flow capacity at the start of hour
 % Flow capacity A end: flow capacity at the end of hour
 
-flow_capacity_A_start =  num_cars_grid *  car_params.n_pass;
 [m , n] = size(pass_flow_rest);
-
-flow_capacity_A_end = zeros(m,n);
-empty_trips_B2A = zeros(m,n);
-empty_trips_A2B = zeros(m,n);
-flow_capacity_B_start = zeros(m,n);
-unused_car_A = zeros(m,n);
-flow_capacity_B_end = flow_capacity_B_start;
+car_flow_capacity_A_start =  num_cars_grid *  car_params.n_pass;
+car_flow_capacity_A_end = zeros(m,n);
+car_flow_capacity_B_start = zeros(m,n);
+car_flow_capacity_B_end = car_flow_capacity_B_start;
+car_empty_trips_B2A = zeros(m,n);
+car_empty_trips_A2B = zeros(m,n);
+car_unused_A = zeros(m,n);
 
 for i = 1:m
-    for    j = 1:n
-        flow_capacity_A_end(i,j) = flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j);
-        flow_capacity_B_end(i,j) = flow_capacity_A_start(i,1) - flow_capacity_A_end(i,j);
-        
+    for j = 1:n
+        car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j);
+        car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
         if j < n
-            if flow_capacity_A_end(i,j) < pass_flow_rest_A2B(i,j+1)
-                empty_trips_B2A(i,j) = (pass_flow_rest_A2B(i,j+1) - flow_capacity_A_end(i,j))/n_pass;
-                flow_capacity_A_end(i,j) = flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j) + empty_trips_B2A(i,j)* n_pass;
-                flow_capacity_B_end(i,j) = flow_capacity_A_start(i,1) - flow_capacity_A_end(i,j);
+            if car_flow_capacity_A_end(i,j) < pass_flow_rest_A2B(i,j+1)
+                car_empty_trips_B2A(i,j) = ((pass_flow_rest_A2B(i,j+1) - car_flow_capacity_A_end(i,j))/car_n_pass);
+                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j) + car_empty_trips_B2A(i,j)* car_n_pass;
+                car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
                 
-            elseif pass_flow_rest_A2B(i,j) < pass_flow_rest_B2A(i,j) && flow_capacity_B_end(i,j) < pass_flow_rest_B2A(i,j+1)
-                empty_trips_A2B(i,j) = ( pass_flow_rest_B2A(i,j+1) - flow_capacity_B_end(i,j))/n_pass;
-                flow_capacity_A_end(i,j) = flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j) - empty_trips_A2B(i,j)* n_pass;
-                flow_capacity_B_end(i,j) = flow_capacity_A_start(i,1) - flow_capacity_A_end(i,j);
+            elseif pass_flow_rest_A2B(i,j) < pass_flow_rest_B2A(i,j) && car_flow_capacity_B_end(i,j) < pass_flow_rest_B2A(i,j+1)
+                car_empty_trips_A2B(i,j) = ((pass_flow_rest_B2A(i,j+1) - car_flow_capacity_B_end(i,j))/car_n_pass);
+                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j) - car_empty_trips_A2B(i,j)* car_n_pass;
+                car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
             end
-            flow_capacity_A_start(i,j+1) = flow_capacity_A_end(i,j);
-            flow_capacity_B_start(i,j+1) = flow_capacity_B_end(i,j);
-            
-        else
+            car_flow_capacity_A_start(i,j+1) = car_flow_capacity_A_end(i,j);
+            car_flow_capacity_B_start(i,j+1) = car_flow_capacity_B_end(i,j);
         end              
     end
 end
 
 for i=1:m
     for j=1:n-1        
-            % Cars available to charge at A. No cars will be available for
-            % charge at B as the capacity is maintained to be only sufficient
-            % for the next hour trip
-        if flow_capacity_A_end(i,j) > pass_flow_rest_A2B(i,j+1)
-            unused_car_A(i,j) = flow_capacity_A_end(i,j) - pass_flow_rest_A2B(i,j+1);
+        % Cars available to charge at A. No cars will be available for
+        % charge at B as the capacity is maintained to be only sufficient
+        % for the next hour trip
+        if car_flow_capacity_A_end(i,j) > pass_flow_rest_A2B(i,j+1)
+            car_unused_A(i,j) = car_flow_capacity_A_end(i,j) - pass_flow_rest_A2B(i,j+1);
         else
         end 
     end
 end
 
-
-round_trips = min(car_trips_A2B, car_trips_B2A);
+car_round_trips = min(car_full_trips_A2B, car_full_trips_B2A);
 
 % Car frequency
 car_freq = ceil(pass_flow_rest / car_params.n_pass);
 output.car_freq = car_freq;
-output.unused_car_A = unused_car_A;
 
-output.flow_capacity_A_end = flow_capacity_A_end;
-output.flow_capacity_B_end = flow_capacity_B_end;
-output.flow_capacity_A_start = flow_capacity_A_start;
-output.flow_capacity_B_start = flow_capacity_B_start;
-output.empty_trips_A2B = empty_trips_A2B;
-output.empty_trips_B2A = empty_trips_B2A;
-output.car_trips_A2B = car_trips_A2B;
-output.car_trips_B2A = car_trips_B2A;
-output.round_trips = round_trips;
+output.car_flow_capacity_A_end = car_flow_capacity_A_end;
+output.car_flow_capacity_B_end = car_flow_capacity_B_end;
+output.car_flow_capacity_A_start = car_flow_capacity_A_start;
+output.car_flow_capacity_B_start = car_flow_capacity_B_start;
+output.car_empty_trips_A2B = car_empty_trips_A2B;
+output.car_empty_trips_B2A = car_empty_trips_B2A;
+output.car_full_trips_A2B = car_full_trips_A2B;
+output.car_full_trips_B2A = car_full_trips_B2A;
+output.car_round_trips = car_round_trips;
+output.car_unused_A = car_unused_A;
 
 % Minimum number of car and tram chargers
 % NOTE: This currently uses the C-rate to calculate charging time, but
@@ -180,14 +175,29 @@ output.round_trips = round_trips;
 % to have it lower than the C-rate. Also, having that number makes it
 % cleaner to calculate the charging station cost (which currently is
 % calculated separately in the cost estimation function using C-rate)
-[n_car_chargers, car_energy_charged_grid, car_energy_discharged_grid, ...
-    car_energy_remaining_grid, car_constraint_compliance] = ...
-    min_number_of_chargers(general_params, ...
-    car_params, car_freq, num_cars, time_hr, n_variations_adjusted, ...
+
+% NOTE: This needs car_full_trips_A2B, car_full_trips_B2A, 
+% car_empty_trips_A2B and car_empty_trips_B2A to be integers.
+% NOTE: Currently not working, do to failing constraints
+%[n_car_chargers_A, n_car_chargers_B, car_energy_charged_grid, ...
+%    car_energy_discharged_grid, car_energy_remaining_grid, ...
+%    car_constraint_compliance] = min_number_of_chargers(general_params, ...
+%    car_params, car_full_trips_A2B, car_full_trips_B2A, car_empty_trips_A2B, ...
+%    car_empty_trips_B2A, num_cars, time_hr, n_variations_adjusted, ...
+%    time_per_round_trip_car * 60);
+
+[n_car_chargers_A, n_car_chargers_B, car_energy_charged_grid, ...
+    car_energy_discharged_grid, car_energy_remaining_grid, ...
+    car_constraint_compliance] = min_number_of_chargers(general_params, ...
+    car_params, car_freq, car_freq, zeros(size(car_freq)), ...
+    zeros(size(car_freq)), num_cars, time_hr, n_variations_adjusted, ...
     time_per_round_trip_car * 60);
-output.n_car_chargers = n_car_chargers;
+
+output.n_car_chargers_A = n_car_chargers_A;
+output.n_car_chargers_B = n_car_chargers_B;
+output.n_car_chargers = n_car_chargers_A + n_car_chargers_B;
 output.P_car_charger_kW = car_params.E_battery_size_kWh * general_params.C_rate;
-output.P_car_chargers = output.P_car_charger_kW * n_car_chargers;
+output.P_car_chargers = output.P_car_charger_kW * output.n_car_chargers;
 
 no_car_idx = find(num_cars == 0);
 car_energy_charged_grid(no_car_idx,:) = 0;
@@ -199,14 +209,17 @@ output.car_energy_discharged_grid = car_energy_discharged_grid;
 output.car_energy_remaining_grid = car_energy_remaining_grid;
 output.car_constraint_compliance = car_constraint_compliance;
 
-[n_tram_chargers, tram_energy_charged_grid, tram_energy_discharged_grid, ...
-    tram_energy_remaining_grid, tram_constraint_compliance] = ...
-    min_number_of_chargers(general_params, ...
-    tram_params, tram_freq, num_trams, time_hr, n_variations_adjusted, ...
+[n_tram_chargers_A, n_tram_chargers_B, tram_energy_charged_grid, ...
+    tram_energy_discharged_grid, tram_energy_remaining_grid, ...
+    tram_constraint_compliance] = min_number_of_chargers(general_params, ...
+    tram_params, tram_freq, tram_freq, zeros(size(tram_freq)), ...
+    zeros(size(tram_freq)), num_trams, time_hr, n_variations_adjusted, ...
     time_per_round_trip_tram * 60);
-output.n_tram_chargers = n_tram_chargers;
+output.n_tram_chargers_A = n_tram_chargers_A;
+output.n_tram_chargers_B = n_tram_chargers_B;
+output.n_tram_chargers = n_tram_chargers_A + n_tram_chargers_B;
 output.P_tram_charger_kW = tram_params.E_battery_size_kWh * general_params.C_rate;
-output.P_tram_chargers = output.P_tram_charger_kW * n_tram_chargers;
+output.P_tram_chargers = output.P_tram_charger_kW * output.n_tram_chargers;
 
 no_tram_idx = find(num_trams == 0);
 tram_energy_charged_grid(no_tram_idx,:) = 0;
@@ -247,55 +260,62 @@ for i = 2:n_variations
 end
 end
 
-function [ n_chargers, energy_charged_grid, energy_discharged_grid, ...
+function [ n_chargers_A, n_chargers_B, energy_charged_grid, energy_discharged_grid, ...
     energy_remaining_grid, constraint_compliance ] = min_number_of_chargers ...
-    (general_params, vehicle_params, vehicle_freq, num_vehicles, time_hr, ...
-    n_variations, t_round_trip)
+    (general_params, vehicle_params, vehicle_full_trips_A2B, ...
+    vehicle_full_trips_B2A, vehicle_empty_trips_A2B, vehicle_empty_trips_B2A, ...
+    num_vehicles, time_hr, n_variations, t_round_trip)
 %MIN_NUMBER_OF_CHARGERS Calculates the minimum amount of chargers required
 %   For this vehicle type, calculate the minimum number of chargers
 %   required fo each mix of vehicles
-%   Assumption: All chargers situated at exactly one of the destinations,
-%   to simplify evaluation
 
-n_chargers = NaN(size(num_vehicles));
-energy_charged_grid = NaN(size(vehicle_freq));
-energy_discharged_grid = NaN(size(vehicle_freq));
-energy_remaining_grid = NaN(size(vehicle_freq));
+n_chargers_A = NaN(size(num_vehicles));
+n_chargers_B = NaN(size(num_vehicles));
+energy_charged_grid = NaN(size(vehicle_full_trips_A2B));
+energy_discharged_grid = NaN(size(vehicle_full_trips_A2B));
+energy_remaining_grid = NaN(size(vehicle_full_trips_A2B));
 constraint_compliance = false(size(num_vehicles));
 for i = 1:n_variations
     if 0 == num_vehicles(i)
-       n_chargers(i) = 0;
+       n_chargers_A(i) = 0;
+       n_chargers_B(i) = 0;
        constraint_compliance(i) = true;
        continue;
     end
     
-    % Binary search to find minimum number of chargers
+    % Stepwise linear search to find minimum number of chargers (the
+    % minimum sum of chargers at destination A and B)
     % The assumption is that a valid number of chargers exist in the search
-    % space, i.e. at the maximum of one charger per vehicle
-    left = 0;
-    right = num_vehicles(i);
-    while (left <= right)
-        mid = floor((left + right) / 2);
+    % space, i.e. at the maximum of one charger per vehicle at each
+    % destination
+    chargers_A = num_vehicles(i);
+    chargers_B = 0;
+    while (chargers_A >= 0 && chargers_B <= num_vehicles(i))
         [ok, energy_charged_hr, energy_discharged_hr, energy_remaining_hr] = ...
             check_number_of_chargers(general_params, vehicle_params, ...
-            vehicle_freq(i,:), num_vehicles(i), time_hr, mid, t_round_trip);
+            vehicle_full_trips_A2B(i,:), vehicle_full_trips_B2A(i,:), ...
+            vehicle_empty_trips_A2B(i, :), vehicle_empty_trips_B2A(i, :), ...
+            num_vehicles(i), time_hr, chargers_A, chargers_B, t_round_trip);
         if (ok)
-            right = mid - 1;
-            n_chargers(i) = mid;
+            n_chargers_A(i) = chargers_A;
+            n_chargers_B(i) = chargers_B;
             constraint_compliance(i) = true;
             energy_charged_grid(i,:) = energy_charged_hr;
             energy_discharged_grid(i,:) = energy_discharged_hr;
             energy_remaining_grid(i,:) = energy_remaining_hr;
+            chargers_A = chargers_A - 1;
         else
-            left = mid + 1;
+            chargers_A = chargers_A - 1;
+            chargers_B = chargers_B + 1;
         end
     end
 end
 end
 
 function [ ok, energy_charged_hr, energy_discharged_hr, energy_remaining_hr ] = ...
-    check_number_of_chargers (general_params, vehicle_params, vehicle_freq, ...
-    num_vehicles, time_hr, number_of_chargers, t_round_trip)
+    check_number_of_chargers (general_params, vehicle_params, vehicle_full_trips_A2B, ...
+    vehicle_full_trips_B2A, vehicle_empty_trips_A2B, vehicle_empty_trips_B2A, ...
+    num_vehicles, time_hr, chargers_A, chargers_B, t_round_trip)
 %CHECK_NUMBER_OF_CHARGERS Checks if this number of chargers is enough
 %   Checks if this number of chargers is enough to perform all the
 %   required vehicle trips and recharge all vehicles completely until
@@ -305,72 +325,178 @@ function [ ok, energy_charged_hr, energy_discharged_hr, energy_remaining_hr ] = 
 %   is reevaluated after each round trip. In addition, the during a round
 %   trip iteration, if a vehicle is fully charged, another vehicle may
 %   continue to use that charger for the remaining time.
+dest_A = 1;
+dest_B = 2;
 
+% TODO: Use single trip energy instead
+% TODO: Use full / empty trip energy instead
+E_single_trip = vehicle_params.E_round_trip_kWh / 2;
+t_single_trip = t_round_trip / 2;
 energy_charged_hr = zeros(numel(time_hr), 1);
 energy_discharged_hr = zeros(numel(time_hr), 1);
 energy_remaining_hr = zeros(numel(time_hr), 1);
-vehicles = ones(num_vehicles,1) * vehicle_params.E_battery_size_kWh;
+vehicles = ones(num_vehicles,2);
+vehicles(:,1) = ones(num_vehicles,1) * vehicle_params.E_battery_size_kWh;
 prev_hr = time_hr(1) - 1;
 for i = 1:numel(time_hr)
     % NOTE: Vehicles are sorted in ascending order by remaining energy
+    vehicles_A = vehicles(vehicles(:,2) == dest_A,:);
+    vehicles_B = vehicles(vehicles(:,2) == dest_B,:);
     
     % Special case: Gap of more than one hour detected, charge accordingly
     curr_hr = time_hr(i);
     if curr_hr > prev_hr + 1
         diff_s = (curr_hr - prev_hr - 1) * 3600;
-        [vehicles, energy_charged] = update_charging(vehicles, ...
+        
+        % Charge vehicles at destination A
+        [vehicles_A, energy_charged] = update_charging(vehicles_A, ...
             vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
-            number_of_chargers, 0, diff_s);
-        vehicles = sort(vehicles);
+            chargers_A, 0, diff_s);
         
         % Update the energy charged output
         energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
+        
+        % Charge vehicles at destination B
+        [vehicles_B, energy_charged] = update_charging(vehicles_B, ...
+            vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+            chargers_B, 0, diff_s);
+        
+        % Update the energy charged output
+        energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
+        
+        % Sort the vehicle matrices
+        vehicles_A = sort(vehicles_A, 1);
+        vehicles_B = sort(vehicles_B, 1);
     end
     
     % For each round trip time, charge vehicles with the least
     % amount of remaining energy, and discharge (use) vehicles with
     % the most amount of remaining energy. If discharge results in empty
     % battery, this number of chargers is not enough for the daily commute.
-    iterations = ceil(vehicle_freq(i) / num_vehicles);
+    iterations = floor(3600 / t_single_trip);
+    completed_iterations = 0;
+    hr_vehicles_A2B = vehicle_full_trips_A2B(i) + vehicle_empty_trips_A2B(i);
+    hr_vehicles_B2A = vehicle_full_trips_B2A(i) + vehicle_empty_trips_B2A(i);
     for j = 1:iterations
-        trip_vehicles = min(num_vehicles, vehicle_freq(i) - (j-1)*num_vehicles);
-        [vehicles, energy_charged] = update_charging(vehicles, ...
-            vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
-            number_of_chargers, trip_vehicles, t_round_trip);
-        [vehicles, ok, energy_discharged] = update_discharging(vehicles, ...
-            vehicle_params.E_round_trip_kWh, trip_vehicles);
+        n_vehicles_A = size(vehicles_A, 1);
+        n_vehicles_B = size(vehicles_B, 1);
+        trip_vehicles_A = min(n_vehicles_A, hr_vehicles_A2B);
+        trip_vehicles_B = min(n_vehicles_B, hr_vehicles_B2A);
+        hr_vehicles_A2B = max(0, hr_vehicles_A2B - trip_vehicles_A);
+        hr_vehicles_B2A = max(0, hr_vehicles_B2A - trip_vehicles_B);
         
-        % Update the energy charged / discharged outputs
+        % Charge vehicles at destination A
+        [vehicles_A, energy_charged] = update_charging(vehicles_A, ...
+            vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+            chargers_A, trip_vehicles_A, t_single_trip);
+        
+        % Discharge vehicles travelling from A to B
+        [vehicles_A, ok, energy_discharged] = update_discharging(vehicles_A, ...
+            E_single_trip, trip_vehicles_A);
+        
+        % Update the energy charged / discharged outputs for destination A
         energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
         energy_discharged_hr(i) = energy_discharged_hr(i) + energy_discharged;
         if ~ok
             % We break here, but still want to have the correct energy
             % remaining, for debugging purposes
-            energy_remaining_hr(i) = sum(vehicles);
+            energy_remaining_hr(i) = sum(vehicles_A(:,1)) + sum(vehicles_B(:,1));
             return;
         end
-        vehicles = sort(vehicles);
+        
+         % Charge vehicles at destination B
+        [vehicles_B, energy_charged] = update_charging(vehicles_B, ...
+            vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+            chargers_B, trip_vehicles_B, t_single_trip);
+        
+        % Discharge vehicles travelling from B to A
+        % TODO: Use single trip energy instead
+        % TODO: Use full / empty trip energy instead
+        [vehicles_B, ok, energy_discharged] = update_discharging(vehicles_B, ...
+            E_single_trip, trip_vehicles_B);
+        
+        % Update the energy charged / discharged outputs for destination A
+        energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
+        energy_discharged_hr(i) = energy_discharged_hr(i) + energy_discharged;
+        if ~ok
+            % We break here, but still want to have the correct energy
+            % remaining, for debugging purposes
+            energy_remaining_hr(i) = sum(vehicles_A(:,1)) + sum(vehicles_B(:,1));
+            return;
+        end
+        
+        % Redistribute vehicles
+        vehicles_A_remaining = vehicles_A(1:end - trip_vehicles_A,:);
+        vehicles_A_leaving = vehicles_A(end - trip_vehicles_A + 1:end,:);
+        vehicles_B_remaining = vehicles_B(1:end - trip_vehicles_B,:);
+        vehicles_B_leaving = vehicles_B(end - trip_vehicles_B + 1:end,:);
+        vehicles_A = [vehicles_A_remaining; vehicles_B_leaving];
+        vehicles_B = [vehicles_B_remaining; vehicles_A_leaving];
+        vehicles_A(:,2) = dest_A;
+        vehicles_B(:,2) = dest_B;
+        
+        % Sort the vehicle matrices
+        vehicles_A = sort(vehicles_A, 1);
+        vehicles_B = sort(vehicles_B, 1);
+        completed_iterations = j;
+        
+        % No more required trips
+        if (hr_vehicles_A2B == 0 && hr_vehicles_B2A == 0)
+            break;
+        end
+    end
+    
+    % More required trips than there are vehicles!
+    if (hr_vehicles_A2B > 0 || hr_vehicles_B2A > 0)
+        ok = false;
+        fprintf('Constraints violated! More required trips than there are vehicles! \n');
+        return;
     end
     
     % Remainder of hour spent charging all vehicles
-    t_remaining = max(0, 3600 - iterations * t_round_trip);
-    [vehicles, energy_charged] = update_charging(vehicles, ...
-        vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
-        number_of_chargers, 0, t_remaining);
-    vehicles = sort(vehicles);
+    t_remaining = max(0, 3600 - completed_iterations * t_single_trip);
     
-    % Update the energy charged / remaining outputs
+    % Charge vehicles at destination A
+    [vehicles_A, energy_charged] = update_charging(vehicles_A, ...
+        vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+        chargers_A, 0, t_remaining);
+    
+    % Update the energy charged output
     energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
-    energy_remaining_hr(i) = sum(vehicles);
+    
+    % Charge vehicles at destination B
+    [vehicles_B, energy_charged] = update_charging(vehicles_B, ...
+        vehicle_params.E_battery_size_kWh, general_params.C_rate, ...
+        chargers_B, 0, t_remaining);
+    
+    % Update the energy charged output
+    energy_charged_hr(i) = energy_charged_hr(i) + energy_charged;
+    
+    % Update the energy remaining outputs
+    energy_remaining_hr(i) = sum(vehicles_A(:,1)) + sum(vehicles_B(:,1));
     prev_hr = curr_hr;
+    
+    % Redistribute and sort the vehicle matrices
+    vehicles = sort([vehicles_A; vehicles_B], 1);
+end
+
+% Extract vehicles at each destination
+vehicles_A = vehicles(vehicles(:,2) == dest_A,:);
+vehicles_B = vehicles(vehicles(:,2) == dest_B,:);
+
+% No vehicles should remain at B
+if (size(vehicles_B, 1) > 0)
+    fprintf('Constraints violated! All vehicles did not return to A! \n');
+    ok = false;
+    return;
 end
 
 % Need to be able to fully charge during night (time between the end of the
 % last hour and the beginning of the first hour in the passenger flow)
 t_night = 3600 * max(0,(min(time_hr) + 23 - max(time_hr)));
-vehicles = update_charging(vehicles, vehicle_params.E_battery_size_kWh, ...
-    general_params.C_rate, number_of_chargers, 0, t_night);
-ok = vehicle_params.E_battery_size_kWh <= min(vehicles);
+vehicles_A = update_charging(vehicles_A, vehicle_params.E_battery_size_kWh, ...
+    general_params.C_rate, chargers_A, 0, t_night);
+ok = vehicle_params.E_battery_size_kWh <= min(vehicles_A(:,1));
 end
 
 function [ vehicles, energy_charged ] = update_charging(vehicles, E_max, ...
@@ -379,8 +505,9 @@ function [ vehicles, energy_charged ] = update_charging(vehicles, E_max, ...
 %   'vehicles' has to be sorted in ascending order
 
 energy_charged = 0;
-n_vehicles = numel(vehicles);
-if (0 == n_chargers) || (n_vehicles == n_excluded_vehicles)
+n_vehicles = size(vehicles, 1);
+if (0 == n_chargers) || (0 == n_vehicles) ...
+        || (n_vehicles == n_excluded_vehicles)
     return;
 end
 t_charge_full = 3600 / C_rate;
@@ -391,11 +518,11 @@ E_chargers_tot = E_diff_max_charger * n_chargers;
 % is not required in order to fully charge vehicle, some other vehicle may
 % use the remaining time at that charger
 for i = 1:(n_vehicles - n_excluded_vehicles)
-    E_vehicle = vehicles(i);
+    E_vehicle = vehicles(i, 1);
     E_diff_max_vehicle = max(0, E_max - E_vehicle);
     E_diff_actual = min(E_chargers_tot, min(E_diff_max_charger, ...
         E_diff_max_vehicle));
-    vehicles(i) = E_vehicle + E_diff_actual;
+    vehicles(i, 1) = E_vehicle + E_diff_actual;
     energy_charged = energy_charged + E_diff_actual;
     E_chargers_tot = max(0, E_chargers_tot - E_diff_actual);
     if 0 >= E_chargers_tot
@@ -405,21 +532,21 @@ end
 end
 
 function [ vehicles, ok, energy_discharged ] = update_discharging(vehicles, ...
-    E_rt, n_trip_vehicles)
+    E_trip, n_trip_vehicles)
 %UPDATE_DISCHARGING Discharge the specified vehicles
 %   'vehicles' has to be sorted in ascending order
 
 ok = true;
 energy_discharged = 0;
-n_vehicles = numel(vehicles);
-if 0 == n_trip_vehicles
-    return
+n_vehicles = size(vehicles, 1);
+if (0 == n_trip_vehicles || 0 == n_vehicles)
+    return;
 end
 for i = (n_vehicles - n_trip_vehicles + 1):n_vehicles
-    E_diff_actual = min(vehicles(i), E_rt);
-    vehicles(i) = max(0, vehicles(i) - E_diff_actual);
+    E_diff_actual = min(vehicles(i, 1), E_trip);
+    vehicles(i, 1) = max(0, vehicles(i, 1) - E_diff_actual);
     energy_discharged = energy_discharged + E_diff_actual;
-    if 0 >= vehicles(i)
+    if 0 >= vehicles(i, 1)
         ok = false;
     end
 end
