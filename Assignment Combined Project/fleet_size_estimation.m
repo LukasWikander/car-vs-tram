@@ -24,7 +24,7 @@ output.mean_flow = mean_flow;
 % One way trip length [min]
 time_per_trip_tram      = tram_params.t_round_trip / 2 / 60; 
 % Round trip length [min]
-time_per_round_trip_tram  = 2 * time_per_trip_tram + max(2 * tram_params.t_unload / 60, tram_params.t_charging_round_trip / 60);
+time_per_round_trip_tram  = 2 * time_per_trip_tram + 2 * tram_params.t_unload / 60;
 % Number of round trips per hour each tram
 num_round_trip_hr_tram  = floor(60 / time_per_round_trip_tram);
 % Maximum number of trams
@@ -40,7 +40,7 @@ flow_cap_hr_tram        = tram_params.n_pass * num_round_trip_hr_tram .* num_tra
 % One way trip length [min]
 time_per_trip_car       = car_params.t_round_trip / 60;  
 % Round trip length [min]
-time_per_round_trip_car   = 2 * time_per_trip_car + max(2 * car_params.t_unload / 60, car_params.t_charging_round_trip / 60);
+time_per_round_trip_car   = 2 * time_per_trip_car + 2 * car_params.t_unload / 60;
 % Number of round trips per hour each car
 num_round_trip_hr_car   = floor(60 / time_per_round_trip_car);   
 % Number of cars in fleet
@@ -468,7 +468,9 @@ for i = 1:numel(time_hr)
     % More required trips than there are vehicles!
     if (hr_vehicles_A2B > 0 || hr_vehicles_B2A > 0)
         throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:RequiredTripsExceedCapacity',...
-            'More required trips than there are vehicles!'));
+            ['More required trips than there are vehicles available! Vehicle: ' ...
+            vehicle_params.name ', num vehicles: ' size(vehicles, 1) ...
+            ', hour: ' time_hr(i)]));
     end
     
     % Remainder of hour spent charging all vehicles
@@ -505,7 +507,8 @@ vehicles_B = vehicles(vehicles(:,2) == dest_B,:);
 % No vehicles should remain at B
 if (size(vehicles_B, 1) > 0)
     throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:SomeVehiclesNotReturned',...
-        'Some vehicles did not return to destination A at the end of the day!'));
+        ['Some vehicles did not return to destination A at the end of the day! ' ...
+        'Vehicle: ' vehicle_params.name ', num vehicles: ' size(vehicles, 1)]));
 end
 
 % Need to be able to fully charge during night (time between the end of the
