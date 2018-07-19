@@ -103,8 +103,13 @@ pass_flow_rest_B2A(temp) = 0;
 output.pass_flow_rest = pass_flow_rest;
 
 car_n_pass = car_params.n_pass;
-car_full_trips_A2B = (pass_flow_rest_A2B / car_n_pass);
-car_full_trips_B2A = (pass_flow_rest_B2A / car_n_pass);
+car_trips_A2B = ceil(pass_flow_rest_A2B / car_n_pass);
+car_trips_B2A = ceil(pass_flow_rest_B2A / car_n_pass);
+
+% Passenger flow rest rounded up to the nearest car_n_pass, since the
+% number of trips within an hour should be an integer
+pass_flow_rest_A2B_car_capacity = car_trips_A2B * car_n_pass;
+pass_flow_rest_B2A_car_capacity = car_trips_B2A * car_n_pass;
 
 % All cars come back to A at the end of day 
 % Flow capacity A start: flow capacity at the start of hour
@@ -117,42 +122,49 @@ car_flow_capacity_B_start = zeros(m,n);
 car_flow_capacity_B_end = car_flow_capacity_B_start;
 car_empty_trips_B2A = zeros(m,n);
 car_empty_trips_A2B = zeros(m,n);
-car_unused_A = zeros(m,n);
+car_unused_capacity_A = zeros(m,n);
 
 for i = 1:m
     for j = 1:n
-        car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j);
+        car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) + pass_flow_rest_B2A_car_capacity(i,j);
         car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
         if j < n
-            if car_flow_capacity_A_end(i,j) < pass_flow_rest_A2B(i,j+1)
-                car_empty_trips_B2A(i,j) = ((pass_flow_rest_A2B(i,j+1) - car_flow_capacity_A_end(i,j))/car_n_pass);
-                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j) + car_empty_trips_B2A(i,j)* car_n_pass;
+            if car_flow_capacity_A_end(i,j) < pass_flow_rest_A2B_car_capacity(i,j+1)
+                car_empty_trips_B2A(i,j) = ((pass_flow_rest_A2B_car_capacity(i,j+1) - car_flow_capacity_A_end(i,j))/car_n_pass);
+                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) + pass_flow_rest_B2A_car_capacity(i,j) + car_empty_trips_B2A(i,j)* car_n_pass;
                 car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
                 
-            elseif pass_flow_rest_A2B(i,j) < pass_flow_rest_B2A(i,j) && car_flow_capacity_B_end(i,j) < pass_flow_rest_B2A(i,j+1)
-                car_empty_trips_A2B(i,j) = ((pass_flow_rest_B2A(i,j+1) - car_flow_capacity_B_end(i,j))/car_n_pass);
-                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B(i,j) + pass_flow_rest_B2A(i,j) - car_empty_trips_A2B(i,j)* car_n_pass;
+            elseif pass_flow_rest_A2B_car_capacity(i,j) < pass_flow_rest_B2A_car_capacity(i,j) && car_flow_capacity_B_end(i,j) < pass_flow_rest_B2A_car_capacity(i,j+1)
+                car_empty_trips_A2B(i,j) = ((pass_flow_rest_B2A_car_capacity(i,j+1) - car_flow_capacity_B_end(i,j))/car_n_pass);
+                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) + pass_flow_rest_B2A_car_capacity(i,j) - car_empty_trips_A2B(i,j)* car_n_pass;
                 car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
             end
             car_flow_capacity_A_start(i,j+1) = car_flow_capacity_A_end(i,j);
             car_flow_capacity_B_start(i,j+1) = car_flow_capacity_B_end(i,j);
+        else
+            car_empty_trips_B2A(i,j) = car_flow_capacity_B_end(i,j)/car_n_pass;
+            car_flow_capacity_A_end(i,j) = car_flow_capacity_A_end(i,j) + car_empty_trips_B2A(i,j)*car_n_pass;
+            car_flow_capacity_B_end(i,j) = car_flow_capacity_B_end(i,j) - car_empty_trips_B2A(i,j)*car_n_pass;
         end              
     end
 end
 
-for i=1:m
-    for j=1:n-1        
-        % Cars available to charge at A. No cars will be available for
-        % charge at B as the capacity is maintained to be only sufficient
-        % for the next hour trip
-        if car_flow_capacity_A_end(i,j) > pass_flow_rest_A2B(i,j+1)
-            car_unused_A(i,j) = car_flow_capacity_A_end(i,j) - pass_flow_rest_A2B(i,j+1);
-        else
-        end 
-    end
+for i = 1:m
+   for j = 1:n
+       if j < n
+           % Cars available to charge at A. No cars will be available for
+           % charge at B as the capacity is maintained to be only sufficient
+           % for the next hour trip
+           if car_flow_capacity_A_end(i,j) > pass_flow_rest_A2B_car_capacity(i,j+1)
+               car_unused_capacity_A(i,j) = car_flow_capacity_A_end(i,j) - pass_flow_rest_A2B_car_capacity(i,j+1);
+           end
+       else
+           car_unused_capacity_A(i,j) = car_flow_capacity_A_end(i,j);
+       end
+   end
 end
 
-car_round_trips = min(car_full_trips_A2B, car_full_trips_B2A);
+car_round_trips = min(car_trips_A2B, car_trips_B2A);
 
 % Car frequency
 car_freq = ceil(pass_flow_rest / car_params.n_pass);
@@ -164,10 +176,10 @@ output.car_flow_capacity_A_start = car_flow_capacity_A_start;
 output.car_flow_capacity_B_start = car_flow_capacity_B_start;
 output.car_empty_trips_A2B = car_empty_trips_A2B;
 output.car_empty_trips_B2A = car_empty_trips_B2A;
-output.car_full_trips_A2B = car_full_trips_A2B;
-output.car_full_trips_B2A = car_full_trips_B2A;
+output.car_trips_A2B = car_trips_A2B;
+output.car_trips_B2A = car_trips_B2A;
 output.car_round_trips = car_round_trips;
-output.car_unused_A = car_unused_A;
+output.car_unused_capacity_A = car_unused_capacity_A;
 
 % Minimum number of car and tram chargers
 % NOTE: This currently uses the C-rate to calculate charging time, but
@@ -178,20 +190,23 @@ output.car_unused_A = car_unused_A;
 
 % NOTE: This needs car_full_trips_A2B, car_full_trips_B2A, 
 % car_empty_trips_A2B and car_empty_trips_B2A to be integers.
-% NOTE: Currently not working, do to failing constraints
-%[n_car_chargers_A, n_car_chargers_B, car_energy_charged_grid, ...
-%    car_energy_discharged_grid, car_energy_remaining_grid, ...
-%    car_constraint_compliance] = min_number_of_chargers(general_params, ...
-%    car_params, car_full_trips_A2B, car_full_trips_B2A, car_empty_trips_A2B, ...
-%    car_empty_trips_B2A, num_cars, time_hr, n_variations_adjusted, ...
-%    time_per_round_trip_car * 60);
-
 [n_car_chargers_A, n_car_chargers_B, car_energy_charged_grid, ...
     car_energy_discharged_grid, car_energy_remaining_grid, ...
     car_constraint_compliance] = min_number_of_chargers(general_params, ...
-    car_params, car_freq, car_freq, zeros(size(car_freq)), ...
-    zeros(size(car_freq)), num_cars, time_hr, n_variations_adjusted, ...
+    car_params, car_trips_A2B, car_trips_B2A, car_empty_trips_A2B, ...
+    car_empty_trips_B2A, num_cars, time_hr, n_variations_adjusted, ...
     time_per_round_trip_car * 60);
+
+% NOTE: The function call below is using car_freq as a placeholder for the
+% trips in each direction. Since it represents the number of round trips,
+% simply doubling it give the number of trips in each direction, which also
+% means that the vehicles never stay in destination B
+%[n_car_chargers_A, n_car_chargers_B, car_energy_charged_grid, ...
+%    car_energy_discharged_grid, car_energy_remaining_grid, ...
+%    car_constraint_compliance] = min_number_of_chargers(general_params, ...
+%    car_params, car_freq, car_freq, zeros(size(car_freq)), ...
+%    zeros(size(car_freq)), num_cars, time_hr, n_variations_adjusted, ...
+%    time_per_round_trip_car * 60);
 
 output.n_car_chargers_A = n_car_chargers_A;
 output.n_car_chargers_B = n_car_chargers_B;
@@ -209,6 +224,10 @@ output.car_energy_discharged_grid = car_energy_discharged_grid;
 output.car_energy_remaining_grid = car_energy_remaining_grid;
 output.car_constraint_compliance = car_constraint_compliance;
 
+% NOTE: The function call below is using tram_freq as a placeholder for the
+% trips in each direction. Since it represents the number of round trips,
+% simply doubling it give the number of trips in each direction, which also
+% means that the vehicles never stay in destination B
 [n_tram_chargers_A, n_tram_chargers_B, tram_energy_charged_grid, ...
     tram_energy_discharged_grid, tram_energy_remaining_grid, ...
     tram_constraint_compliance] = min_number_of_chargers(general_params, ...
@@ -448,9 +467,8 @@ for i = 1:numel(time_hr)
     
     % More required trips than there are vehicles!
     if (hr_vehicles_A2B > 0 || hr_vehicles_B2A > 0)
-        ok = false;
-        fprintf('Constraints violated! More required trips than there are vehicles! \n');
-        return;
+        throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:SomeVehiclesNotReturned',...
+			'Some vehicles did not return to destination A at the end of the day!'));
     end
     
     % Remainder of hour spent charging all vehicles
@@ -487,8 +505,8 @@ vehicles_B = vehicles(vehicles(:,2) == dest_B,:);
 % No vehicles should remain at B
 if (size(vehicles_B, 1) > 0)
     fprintf('Constraints violated! All vehicles did not return to A! \n');
-    ok = false;
-    return;
+    throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:RequiredTripsExceedCapacity',...
+        'More required trips than there are vehicles!'));
 end
 
 % Need to be able to fully charge during night (time between the end of the
