@@ -504,7 +504,6 @@ vehicles_B = vehicles(vehicles(:,2) == dest_B,:);
 
 % No vehicles should remain at B
 if (size(vehicles_B, 1) > 0)
-    fprintf('Constraints violated! All vehicles did not return to A! \n');
     throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:RequiredTripsExceedCapacity',...
         'More required trips than there are vehicles!'));
 end
