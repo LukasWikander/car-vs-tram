@@ -467,8 +467,8 @@ for i = 1:numel(time_hr)
     
     % More required trips than there are vehicles!
     if (hr_vehicles_A2B > 0 || hr_vehicles_B2A > 0)
-        throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:SomeVehiclesNotReturned',...
-			'Some vehicles did not return to destination A at the end of the day!'));
+        throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:RequiredTripsExceedCapacity',...
+            'More required trips than there are vehicles!'));
     end
     
     % Remainder of hour spent charging all vehicles
@@ -504,8 +504,8 @@ vehicles_B = vehicles(vehicles(:,2) == dest_B,:);
 
 % No vehicles should remain at B
 if (size(vehicles_B, 1) > 0)
-    throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:RequiredTripsExceedCapacity',...
-        'More required trips than there are vehicles!'));
+    throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:SomeVehiclesNotReturned',...
+        'Some vehicles did not return to destination A at the end of the day!'));
 end
 
 % Need to be able to fully charge during night (time between the end of the
