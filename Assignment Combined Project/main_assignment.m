@@ -24,6 +24,7 @@ general_params.c_tram_track_mnt_yr = (368+172)/5/249*10*1e6; % Cost of track yea
 general_params.l_life_tram_yr = 40; % Lifetime of tram [year]
 general_params.l_life_car_km = 160000; % Expected mileage of car [km]
 general_params.t_zerotomax = 20; % Acceleration time for constructed drive cycle [s]
+general_params.ROI_horizon_yr = 15;	% Time at which to evaluate cost [year]
 
 general_params.rho_air = 1.1839;	% Air density [kg/m3]
 general_params.acc_gravity = 9.81;	% Acceleration of gravity [m/s2]
