@@ -35,7 +35,7 @@ for ii = 1:3
 		disp(['Checking assumption on ''' fnames{field_no} ''' ...'])
 
 		% Central difference approximation
-		h = sz_h*investigated_params.(fnames{field_no});
+		h = get_step_size(sz_h,investigated_params,fnames{field_no});
 		investigated_params_p = investigated_params;
 		investigated_params_p.(fnames{field_no}) = investigated_params_p.(fnames{field_no}) + h;
 		investigated_params_n = investigated_params;
@@ -60,5 +60,20 @@ for ii = 1:3
 	end
 end
 
+end
+
+function h = get_step_size(pct_h,params,fieldname)
+	% If the field is expected to be an integer, return the minimal step size of
+	% 1, otherwise return the specified per cent based step size
+	switch fieldname
+		case 'n_pass'
+			h = 1;
+		case 'l_life_tram_yr'
+			h = 1;
+		case 'n_variations'
+			h = 1;
+		otherwise
+			h = pct_h*params.(fieldname);
+	end
 end
 
