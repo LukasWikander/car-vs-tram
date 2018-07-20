@@ -90,7 +90,7 @@ car_purchase_grid(isnan(car_purchase_grid)) = 0; % When using only trams, no car
 
 output.cost_grid_mix_day = ((output.trams_cost_purchase' * ones(dy_size)) .* tram_purchase_grid ...
 	+ (output.cars_cost_purchase' * ones(dy_size)) .* car_purchase_grid ...
-	+ daily_cost_grid);
+	+ daily_cost_grid) + tram_chargers_cost_purchase' + car_chargers_cost_purchase';
 
 
 
