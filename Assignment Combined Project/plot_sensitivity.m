@@ -16,26 +16,29 @@ function plot_sensitivity(sensitivity)
 		barnames = fieldnames(sensitivity.(param));
 		for ii = 1:length(barnames)
 			if ~isnan(sensitivity.(param).(barnames{ii}))
-				bardata = zeros(length(barnames),length(sensitivity.(param).(barnames{ii})));
+				bardata = zeros(length(barnames),1);
 				break
 			end
 		end
 		
 		for ii = 1:length(bardata)
-			bardata(ii,:) = abs(sensitivity.(param).(barnames{ii}));
+			try
+				bardata(ii) = abs(sensitivity.(param).(barnames{ii})(1,4));
+			catch
+				bardata(ii) = NaN;
+			end
 		end
-		
 		% Remove NaN values from plot
 		for ii = length(bardata):-1:1
-			if any(isnan(bardata(ii,:)))
-				bardata(ii,:) = [];
+			if any(isnan(bardata(ii)))
+				bardata(ii) = [];
 				barnames(ii) = [];
 			end
 		end
 		
 		
 		%% Plot
-		figure('Name',['Sensitivity of cost to ' name])
+		figure('Name',['Sensitivity of 15 year cost to ' name])
 		barh(bardata)
 		set(gca,'yticklabel',barnames)
 		set(gca,'ticklabelinterpreter','none')

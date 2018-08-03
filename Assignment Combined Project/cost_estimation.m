@@ -13,8 +13,16 @@ car_drive_cycle_cost = drive_cycle_cost(car_params, general_params, car_simulati
 output.car_drive_cycle_cost = car_drive_cycle_cost;
 
 fprintf('\n--Operational day cost--\n');
-tram_fleet_cost_grid = fleet_info_output.tram_freq * (tram_drive_cycle_cost.c_E_round_trip + tram_drive_cycle_cost.c_M_round_trip);
-car_fleet_cost_grid = fleet_info_output.car_freq * (car_drive_cycle_cost.c_E_round_trip + car_drive_cycle_cost.c_M_round_trip);
+%tram_fleet_cost_grid = fleet_info_output.tram_freq * (tram_drive_cycle_cost.c_E_round_trip + tram_drive_cycle_cost.c_M_round_trip);
+tram_fleet_cost_grid = fleet_info_output.tram_energy_charged_grid * general_params.c_E_kWh + ...
+	(fleet_info_output.tram_freq_A2B + fleet_info_output.tram_freq_B2A) * tram_drive_cycle_cost.c_M_round_trip;
+
+total_car_trips_1hr = (fleet_info_output.car_trips_A2B + fleet_info_output.car_trips_B2A + ...
+	fleet_info_output.car_empty_trips_A2B + fleet_info_output.car_empty_trips_B2A);
+%car_fleet_cost_grid = fleet_info_output.car_freq * (car_drive_cycle_cost.c_E_round_trip + car_drive_cycle_cost.c_M_round_trip);
+car_fleet_cost_grid = fleet_info_output.car_energy_charged_grid * general_params.c_E_kWh + ...
+	total_car_trips_1hr * car_drive_cycle_cost.c_M_round_trip;
+
 fleet_cost_grid = tram_fleet_cost_grid + car_fleet_cost_grid;
 output.tram_fleet_cost_grid = tram_fleet_cost_grid;
 output.car_fleet_cost_grid = car_fleet_cost_grid;
@@ -66,9 +74,25 @@ fprintf('Number of trams: %1.0f, number of cars: %1.0f \n', fleet_info_output.nu
 
 % TODO: Life cycle costs, may result in other mix
 %distance_driven_per_tram = sum(fleet_info_output.tram_freq, 2) * general_params.l_round_trip /1000 ./ fleet_info_output.num_trams';
-distance_driven_per_car_and_day = sum(fleet_info_output.car_freq, 2) * general_params.l_round_trip /1000 ./ fleet_info_output.num_cars';
+distance_driven_per_car_and_day = sum(total_car_trips_1hr, 2) * general_params.l_round_trip /1000 ./ fleet_info_output.num_cars';
 output.distance_driven_per_car_and_day = distance_driven_per_car_and_day;
 output.l_life_car_yr = general_params.l_life_car_km ./ distance_driven_per_car_and_day /365;
+
+
+dy = 0:365*80;
+daily_cost_grid = output.fleet_cost_dy * dy;
+dy_size = size(dy);
+n_size = size(output.fleet_cost_dy);
+
+tram_purchase_grid = ceil(ones(n_size) * dy / 365 ./ ((general_params.l_life_tram_yr * ones(n_size)) * ones(dy_size)));
+car_purchase_grid = ceil(ones(n_size) * dy /365 ./ (output.l_life_car_yr * ones(dy_size)));
+car_purchase_grid(isnan(car_purchase_grid)) = 0; % When using only trams, no cars are purchased
+
+output.cost_grid_mix_day = ((output.trams_cost_purchase' * ones(dy_size)) .* tram_purchase_grid ...
+	+ (output.cars_cost_purchase' * ones(dy_size)) .* car_purchase_grid ...
+	+ daily_cost_grid) + tram_chargers_cost_purchase' + car_chargers_cost_purchase';
+
+
 
 end
 

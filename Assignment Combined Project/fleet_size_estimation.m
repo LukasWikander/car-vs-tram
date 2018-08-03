@@ -24,7 +24,7 @@ output.mean_flow = mean_flow;
 % One way trip length [min]
 time_per_trip_tram      = tram_params.t_round_trip / 2 / 60; 
 % Round trip length [min]
-time_per_round_trip_tram  = 2 * time_per_trip_tram + max(2 * tram_params.t_unload / 60, tram_params.t_charging_round_trip / 60);
+time_per_round_trip_tram  = 2 * time_per_trip_tram + 2 * tram_params.t_unload / 60;
 % Number of round trips per hour each tram
 num_round_trip_hr_tram  = floor(60 / time_per_round_trip_tram);
 % Maximum number of trams
@@ -38,9 +38,9 @@ output.num_trams = num_trams;
 flow_cap_hr_tram        = tram_params.n_pass * num_round_trip_hr_tram .* num_trams;
 
 % One way trip length [min]
-time_per_trip_car       = car_params.t_round_trip / 60;  
+time_per_trip_car       = car_params.t_round_trip / 2 / 60;  
 % Round trip length [min]
-time_per_round_trip_car   = 2 * time_per_trip_car + max(2 * car_params.t_unload / 60, car_params.t_charging_round_trip / 60);
+time_per_round_trip_car   = 2 * time_per_trip_car + 2 * car_params.t_unload / 60;
 % Number of round trips per hour each car
 num_round_trip_hr_car   = floor(60 / time_per_round_trip_car);   
 % Number of cars in fleet
@@ -116,7 +116,7 @@ pass_flow_rest_B2A_car_capacity = car_trips_B2A * car_n_pass;
 % Flow capacity A end: flow capacity at the end of hour
 
 [m , n] = size(pass_flow_rest);
-car_flow_capacity_A_start =  num_cars_grid *  car_params.n_pass;
+car_flow_capacity_A_start =  num_cars_grid*car_params.n_pass;
 car_flow_capacity_A_end = zeros(m,n);
 car_flow_capacity_B_start = zeros(m,n);
 car_flow_capacity_B_end = car_flow_capacity_B_start;
@@ -124,43 +124,67 @@ car_empty_trips_B2A = zeros(m,n);
 car_empty_trips_A2B = zeros(m,n);
 car_unused_capacity_A = zeros(m,n);
 
+% Since we always start from destination A, that's the one we should
+% prepare for in the previous trip.
+% We may not prepare more cars (through empty trips) than there are cars in
+% total
+% It is possible (when more than one round trip can be performed) to adjust
+% the rest of the needed capacity during the same hour in which it is
+% needed
+% In the worst case, doing full round trips with all vehicles will satisfy
+% the capacity needs, since that is what the fleet has been dimensioned by
+% NOTE: The maximum flow capacity at the start and end of the hour is the
+% number of cars multiplied with the number of passengers, not including
+% the number of round trips is INTENTIONAL, it will not work otherwise
 for i = 1:m
     for j = 1:n
-        car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) + pass_flow_rest_B2A_car_capacity(i,j);
+        max_cars = num_cars(i);
+        
+        % First, satisfy current capacity needs, possibly with empty cars
+        % during this hour
+        if car_flow_capacity_A_start(i,j) + pass_flow_rest_B2A_car_capacity(i,j) < pass_flow_rest_A2B_car_capacity(i,j)
+            car_empty_trips_B2A(i,j) = (pass_flow_rest_A2B_car_capacity(i,j) - car_flow_capacity_A_start(i,j) - pass_flow_rest_B2A_car_capacity(i,j))/car_n_pass;
+        elseif car_flow_capacity_B_start(i,j) + pass_flow_rest_A2B_car_capacity(i,j) < pass_flow_rest_B2A_car_capacity(i,j)
+            car_empty_trips_A2B(i,j) = (pass_flow_rest_B2A_car_capacity(i,j) - car_flow_capacity_B_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j))/car_n_pass;
+        end
+        
+        car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) ...
+            + pass_flow_rest_B2A_car_capacity(i,j) + car_empty_trips_B2A(i,j)*car_n_pass - car_empty_trips_A2B(i,j)*car_n_pass;
         car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
+        
         if j < n
+            % Then, we need to prepare for the cars going from A to B, 
+            % since A is the starting destination, but we can't use more
+            % than the total number of cars available
+            % Preparing for vehicles going from B to A is not necessary,
+            % since we can do that during the next hour
             if car_flow_capacity_A_end(i,j) < pass_flow_rest_A2B_car_capacity(i,j+1)
-                car_empty_trips_B2A(i,j) = ((pass_flow_rest_A2B_car_capacity(i,j+1) - car_flow_capacity_A_end(i,j))/car_n_pass);
-                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) + pass_flow_rest_B2A_car_capacity(i,j) + car_empty_trips_B2A(i,j)* car_n_pass;
-                car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
                 
-            elseif pass_flow_rest_A2B_car_capacity(i,j) < pass_flow_rest_B2A_car_capacity(i,j) && car_flow_capacity_B_end(i,j) < pass_flow_rest_B2A_car_capacity(i,j+1)
-                car_empty_trips_A2B(i,j) = ((pass_flow_rest_B2A_car_capacity(i,j+1) - car_flow_capacity_B_end(i,j))/car_n_pass);
-                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) + pass_flow_rest_B2A_car_capacity(i,j) - car_empty_trips_A2B(i,j)* car_n_pass;
+                car_empty_trips_B2A(i,j) = car_empty_trips_B2A(i,j) + min(max_cars, min(car_flow_capacity_B_end(i,j)/car_n_pass, ...
+                    ((pass_flow_rest_A2B_car_capacity(i,j+1) - car_flow_capacity_A_end(i,j))/car_n_pass)));
+                car_flow_capacity_A_end(i,j) = car_flow_capacity_A_start(i,j) - pass_flow_rest_A2B_car_capacity(i,j) + pass_flow_rest_B2A_car_capacity(i,j) ...
+                    + car_empty_trips_B2A(i,j)* car_n_pass;
                 car_flow_capacity_B_end(i,j) = car_flow_capacity_A_start(i,1) - car_flow_capacity_A_end(i,j);
             end
+            
             car_flow_capacity_A_start(i,j+1) = car_flow_capacity_A_end(i,j);
             car_flow_capacity_B_start(i,j+1) = car_flow_capacity_B_end(i,j);
         else
-            car_empty_trips_B2A(i,j) = car_flow_capacity_B_end(i,j)/car_n_pass;
-            car_flow_capacity_A_end(i,j) = car_flow_capacity_A_end(i,j) + car_empty_trips_B2A(i,j)*car_n_pass;
-            car_flow_capacity_B_end(i,j) = car_flow_capacity_B_end(i,j) - car_empty_trips_B2A(i,j)*car_n_pass;
-        end              
+            
+            % The last hour, returning the vehicles to A
+            car_empty_trips_B2A(i,j) = car_empty_trips_B2A(i,j) + car_flow_capacity_B_end(i,j)/car_n_pass;
+            car_flow_capacity_A_end(i,j) = car_flow_capacity_A_end(i,j) + car_flow_capacity_B_end(i,j);
+            car_flow_capacity_B_end(i,j) = car_flow_capacity_B_end(i,j) - car_flow_capacity_B_end(i,j);
+        end 
     end
 end
 
 for i = 1:m
    for j = 1:n
-       if j < n
-           % Cars available to charge at A. No cars will be available for
-           % charge at B as the capacity is maintained to be only sufficient
-           % for the next hour trip
-           if car_flow_capacity_A_end(i,j) > pass_flow_rest_A2B_car_capacity(i,j+1)
-               car_unused_capacity_A(i,j) = car_flow_capacity_A_end(i,j) - pass_flow_rest_A2B_car_capacity(i,j+1);
-           end
-       else
-           car_unused_capacity_A(i,j) = car_flow_capacity_A_end(i,j);
-       end
+       % Unused car capacity at A
+       car_unused_capacity_A(i,j) = max(0, car_flow_capacity_A_start(i,j) ...
+           - max(pass_flow_rest_A2B_car_capacity(i,j), max(0, ...
+           pass_flow_rest_B2A_car_capacity(i,j) - car_flow_capacity_B_start(i,j))));
    end
 end
 
@@ -468,7 +492,9 @@ for i = 1:numel(time_hr)
     % More required trips than there are vehicles!
     if (hr_vehicles_A2B > 0 || hr_vehicles_B2A > 0)
         throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:RequiredTripsExceedCapacity',...
-            'More required trips than there are vehicles!'));
+            ['More required trips than there are vehicles available! Vehicle: ' ...
+            vehicle_params.name ', num vehicles: ' num2str(size(vehicles, 1)) ...
+            ', hour: ' num2str(time_hr(i))]));
     end
     
     % Remainder of hour spent charging all vehicles
@@ -505,7 +531,8 @@ vehicles_B = vehicles(vehicles(:,2) == dest_B,:);
 % No vehicles should remain at B
 if (size(vehicles_B, 1) > 0)
     throw(MException('FLEET_SIZE_ESTIMATION:CHECK_NUMBER_OF_CHARGERS:SomeVehiclesNotReturned',...
-        'Some vehicles did not return to destination A at the end of the day!'));
+        ['Some vehicles did not return to destination A at the end of the day! ' ...
+        'Vehicle: ' vehicle_params.name ', num vehicles: ' num2str(size(vehicles, 1))]));
 end
 
 % Need to be able to fully charge during night (time between the end of the

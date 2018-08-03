@@ -35,7 +35,7 @@ for ii = 1:3
 		disp(['Checking assumption on ''' fnames{field_no} ''' ...'])
 
 		% Central difference approximation
-		h = sz_h*investigated_params.(fnames{field_no});
+		h = get_step_size(sz_h,investigated_params,fnames{field_no});
 		investigated_params_p = investigated_params;
 		investigated_params_p.(fnames{field_no}) = investigated_params_p.(fnames{field_no}) + h;
 		investigated_params_n = investigated_params;
@@ -44,12 +44,36 @@ for ii = 1:3
 		output_p = assignment_fcn(investigated_params_p);
 		output_n = assignment_fcn(investigated_params_n);
 
-		[f_p(1), f_p(2)] = assignment_cost_function(output_p);
-		[f_n(1), f_n(2)] = assignment_cost_function(output_n);
+		[c0_p,c5_p,c10_p,c15_p,c20_p] = assignment_cost_function(output_p);
+		[c0_n,c5_n,c10_n,c15_n,c20_n] = assignment_cost_function(output_n);
 
-		sensitivity.(sens_fld_name).(fnames{field_no}) = (f_p - f_n)./(2.*h);
+		sensitivity.(sens_fld_name).(fnames{field_no}) = [(c0_p.cost - c0_n.cost)./(2.*h) ...
+														(c5_p.cost - c5_n.cost)./(2.*h) ...
+														(c10_p.cost - c10_n.cost)./(2.*h) ...
+														(c15_p.cost - c15_n.cost)./(2.*h) ...
+														(c20_p.cost - c20_n.cost)./(2.*h); ...
+														(c0_p.mix - c0_n.mix)./(2.*h) ...
+														(c5_p.mix - c5_n.mix)./(2.*h) ...
+														(c10_p.mix - c10_n.mix)./(2.*h) ...
+														(c15_p.mix - c15_n.mix)./(2.*h) ...
+														(c20_p.mix - c20_n.mix)./(2.*h);];
 	end
 end
 
+end
+
+function h = get_step_size(pct_h,params,fieldname)
+	% If the field is expected to be an integer, return the minimal step size of
+	% 1, otherwise return the specified per cent based step size
+	switch fieldname
+		case 'n_pass'
+			h = 1;
+		case 'l_life_tram_yr'
+			h = 1;
+		case 'n_variations'
+			h = 1;
+		otherwise
+			h = pct_h*params.(fieldname);
+	end
 end
 
