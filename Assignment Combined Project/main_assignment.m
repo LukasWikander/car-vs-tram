@@ -83,7 +83,7 @@ clc
 sensitivity = sensitivity_analysis(general_params,tram_params,car_params);
 
 %%
-plot_sensitivity(sensitivity)
+plot_sensitivity(sensitivity, general_params)
 
 
 

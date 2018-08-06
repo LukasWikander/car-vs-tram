@@ -1,4 +1,4 @@
-function plot_sensitivity(sensitivity)
+function plot_sensitivity(sensitivity, general_params)
 	for param_no = 1:3
 		switch param_no
 			case 1
@@ -23,7 +23,10 @@ function plot_sensitivity(sensitivity)
 		
 		for ii = 1:length(bardata)
 			try
-				bardata(ii) = abs(sensitivity.(param).(barnames{ii})(1,4));
+				bardata(ii) = abs(sensitivity.(param).(barnames{ii})(1));
+				if abs(sensitivity.(param).(barnames{ii})(2)) > 0
+					warning(['Fleet composition is sensitive to ' barnames{ii} ' at specified year!']);
+				end
 			catch
 				bardata(ii) = NaN;
 			end
@@ -38,7 +41,7 @@ function plot_sensitivity(sensitivity)
 		
 		
 		%% Plot
-		figure('Name',['Sensitivity of 15 year cost to ' name])
+		figure('Name',['Sensitivity of ' num2str(general_params.ROI_horizon_yr) ' year cost to ' name])
 		barh(bardata)
 		set(gca,'yticklabel',barnames)
 		set(gca,'ticklabelinterpreter','none')
