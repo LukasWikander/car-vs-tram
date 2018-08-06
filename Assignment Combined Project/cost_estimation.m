@@ -56,8 +56,8 @@ tram_chargers_cost_purchase = fleet_info_output.P_tram_chargers ...
     * general_params.c_station_kW;
 
 %% Road / track costs
-track_cost_purchase = (general_params.c_tram_track_km * general_params.l_round_trip  + 2 * general_params.c_stop) * max(fleet_info_output.num_trams, 1);
-road_cost_purchase = general_params.c_car_road_km * general_params.l_round_trip * max(fleet_info_output.num_cars, 1);
+track_cost_purchase = (general_params.c_tram_track_km * general_params.l_round_trip/1000  + 2 * general_params.c_stop) * min(fleet_info_output.num_trams, 1);
+road_cost_purchase = general_params.c_car_road_km * general_params.l_round_trip/1000 * min(fleet_info_output.num_cars, 1);
 
 %% Fleet purchase cost
 fleet_cost_purchase =  trams_cost_purchase + cars_cost_purchase ...
@@ -98,7 +98,8 @@ car_purchase_grid(isnan(car_purchase_grid)) = 0; % When using only trams, no car
 
 output.cost_grid_mix_day = ((output.trams_cost_purchase' * ones(dy_size)) .* tram_purchase_grid ...
 	+ (output.cars_cost_purchase' * ones(dy_size)) .* car_purchase_grid ...
-	+ daily_cost_grid) + tram_chargers_cost_purchase' + car_chargers_cost_purchase';
+	+ daily_cost_grid) + tram_chargers_cost_purchase' + car_chargers_cost_purchase' ...
+	+ track_cost_purchase' + road_cost_purchase';
 
 
 
