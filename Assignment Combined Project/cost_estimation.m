@@ -56,7 +56,7 @@ tram_chargers_cost_purchase = fleet_info_output.P_tram_chargers ...
     * general_params.c_station_kW;
 
 %% Road / track costs
-track_cost_purchase = general_params.c_tram_track_km * general_params.l_round_trip * max(fleet_info_output.num_trams, 1);
+track_cost_purchase = (general_params.c_tram_track_km * general_params.l_round_trip  + 2 * general_params.c_stop) * max(fleet_info_output.num_trams, 1);
 road_cost_purchase = general_params.c_car_road_km * general_params.l_round_trip * max(fleet_info_output.num_cars, 1);
 
 %% Fleet purchase cost
