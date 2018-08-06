@@ -30,33 +30,40 @@ for ii = 1:3
 		if ischar(investigated_params.(fnames{field_no}))
 			sensitivity.(sens_fld_name).(fnames{field_no}) = NaN;
 			continue
+		elseif strcmp(fnames{field_no},'t_zerotomax') || strcmp(fnames{field_no},'P_max_kW') ...
+				|| strcmp(fnames{field_no},'n_variations')
+			sensitivity.(sens_fld_name).(fnames{field_no}) = NaN;
+			continue
 		end
 
 		disp(['Checking assumption on ''' fnames{field_no} ''' ...'])
 
 		% Central difference approximation
 		h = get_step_size(sz_h,investigated_params,fnames{field_no});
-		investigated_params_p = investigated_params;
-		investigated_params_p.(fnames{field_no}) = investigated_params_p.(fnames{field_no}) + h;
-		investigated_params_n = investigated_params;
-		investigated_params_n.(fnames{field_no}) = investigated_params_n.(fnames{field_no}) - h;
+		
+		if ~strcmp(fnames{field_no}, 'ROI_horizon_yr')
+			investigated_params_p = investigated_params;
+			investigated_params_p.(fnames{field_no}) = investigated_params_p.(fnames{field_no}) + h;
+			investigated_params_n = investigated_params;
+			investigated_params_n.(fnames{field_no}) = investigated_params_n.(fnames{field_no}) - h;
 
-		output_p = assignment_fcn(investigated_params_p);
-		output_n = assignment_fcn(investigated_params_n);
+			output_p = assignment_fcn(investigated_params_p);
+			output_n = assignment_fcn(investigated_params_n);
 
-		[c0_p,c5_p,c10_p,c15_p,c20_p] = assignment_cost_function(output_p);
-		[c0_n,c5_n,c10_n,c15_n,c20_n] = assignment_cost_function(output_n);
+			c_p = assignment_cost_function(output_p, general_params.ROI_horizon_yr);
+			c_n = assignment_cost_function(output_n, general_params.ROI_horizon_yr);
 
-		sensitivity.(sens_fld_name).(fnames{field_no}) = [(c0_p.cost - c0_n.cost)./(2.*h) ...
-														(c5_p.cost - c5_n.cost)./(2.*h) ...
-														(c10_p.cost - c10_n.cost)./(2.*h) ...
-														(c15_p.cost - c15_n.cost)./(2.*h) ...
-														(c20_p.cost - c20_n.cost)./(2.*h); ...
-														(c0_p.mix - c0_n.mix)./(2.*h) ...
-														(c5_p.mix - c5_n.mix)./(2.*h) ...
-														(c10_p.mix - c10_n.mix)./(2.*h) ...
-														(c15_p.mix - c15_n.mix)./(2.*h) ...
-														(c20_p.mix - c20_n.mix)./(2.*h);];
+			sensitivity.(sens_fld_name).(fnames{field_no}) = [(c_p.cost - c_n.cost)./(2.*h); ...
+														(c_p.mix - c_n.mix)./(2.*h)];
+		else
+			output = assignment_fcn(investigated_params);
+			
+			c_p = assignment_cost_function(output, general_params.ROI_horizon_yr + h);
+			c_n = assignment_cost_function(output, general_params.ROI_horizon_yr - h);
+			
+			sensitivity.(sens_fld_name).(fnames{field_no}) = [(c_p.cost - c_n.cost)./(2.*h); ...
+														(c_p.mix - c_n.mix)./(2.*h)];
+		end
 	end
 end
 
@@ -71,6 +78,10 @@ function h = get_step_size(pct_h,params,fieldname)
 		case 'l_life_tram_yr'
 			h = 1;
 		case 'n_variations'
+			h = 1;
+		case 'ROI_horizon_yr'
+			h = 1;
+		case 'v_max_kmh'
 			h = 1;
 		otherwise
 			h = pct_h*params.(fieldname);
