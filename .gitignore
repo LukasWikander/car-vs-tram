@@ -3,5 +3,10 @@
 *~
 *.jpg
 *.docx
+*.aux
+*.log
+*.gz
+*.tex
+*.pdf
 Assignment Combined Project/probdata/saved/*
 !Assignment Combined Project/probdata/saved/.gitkeep
