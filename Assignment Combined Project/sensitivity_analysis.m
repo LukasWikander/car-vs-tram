@@ -31,7 +31,7 @@ for ii = 1:3
 			sensitivity.(sens_fld_name).(fnames{field_no}) = NaN;
 			continue
 		elseif strcmp(fnames{field_no},'t_zerotomax') || strcmp(fnames{field_no},'P_max_kW') ...
-				|| strcmp(fnames{field_no},'n_variations')
+				|| strcmp(fnames{field_no},'n_variations') || strcmp(fnames{field_no},'passenger_flow_multiplier')
 			sensitivity.(sens_fld_name).(fnames{field_no}) = NaN;
 			continue
 		end

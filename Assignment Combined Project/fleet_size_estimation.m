@@ -13,8 +13,8 @@ distance     = drv_mission.dc.s;
 % The number of passengers travelling from A to B during different time of
 % the day
 time_hr      = pass_flow.x;
-from_A2B     = pass_flow.yA;
-from_B2A     = pass_flow.yB;
+from_A2B     = pass_flow.yA * general_params.passenger_flow_multiplier;
+from_B2A     = pass_flow.yB * general_params.passenger_flow_multiplier;
 
 %% Fleet size
 mean_flow     = sum (from_A2B) / (max(time_hr) - min(time_hr));

@@ -3,9 +3,11 @@ clear all
 close all
 clc
 
+%% Non-vehicle-specific parameters
+general_params = struct;
+general_params.passenger_flow_multiplier = 1;
 
 %% Assignment given parameters
-general_params = struct;
 general_params.m_pass_kg = 80; % Passenger weight [kg]
 general_params.c_E_kWh = 1; % Cost of energy [SEK/kWh]
 general_params.v_max_kmh = 70; % Maximum allowed velocity [km/h]
@@ -19,10 +21,10 @@ general_params.n_variations = 10; % Number of tram variations (grid size)
 
 %% Assumed additional parameters
 %general_params.V_batt = 400;	% Battery pack voltage [V]
-general_params.c_tram_track_km = 79.1e6; % Cost of track [SEK/km]
+general_params.c_tram_track_km = 0;%79.1e6; % Cost of track [SEK/km] EXCLUDED FROM ANALYSIS
 %general_params.c_tram_track_mnt_yr = (368+172)/5/249*10*1e6; % Cost of track
 %yearly when in use [SEK/km/year] - NOT USED AS TRAM MAINTENANCE INCLUDES TRACK
-general_params.c_car_road_km = 6.56*3.8e6; % Cost of road [SEK/km]
+general_params.c_car_road_km = 0;%6.56*3.8e6; % Cost of road [SEK/km] EXCLUDED FROM ANALYSIS
 general_params.l_life_tram_yr = 40; % Lifetime of tram [year]
 general_params.l_life_car_km = 462000*1.6;%160000; % Expected mileage of car [km]
 general_params.t_zerotomax = 20; % Acceleration time for constructed drive cycle [s]
