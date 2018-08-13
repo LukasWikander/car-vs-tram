@@ -5,6 +5,10 @@ function opt = assignment_cost_function(outputs, ROI_yr)
 %% Evaluate accumulated costs at different time horizons
 yr_idx = round(ROI_yr*365);
 
-[opt.cost,opt.mix] = min(outputs.results.costs.cost_grid_mix_day(:,yr_idx));
+[opt.cost,opt.mixCost] = min(outputs.results.costs.cost_grid_mix_day(:,yr_idx));
+
+A = sum(outputs.results.fleet.car_energy_charged_grid,2) +...
+    sum(outputs.results.fleet.tram_energy_charged_grid,2);
+[opt.energConsum,opt.mixEnergConsum] = min(A);
 end
 
