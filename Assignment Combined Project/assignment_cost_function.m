@@ -9,6 +9,7 @@ yr_idx = round(ROI_yr*365);
 
 A = sum(outputs.results.fleet.car_energy_charged_grid,2) +...
     sum(outputs.results.fleet.tram_energy_charged_grid,2);
-[opt.energConsum,opt.mixEnergConsum] = min(A);
+% [opt.energConsum,opt.mixEnergConsum] = min(A);
+opt.energConsum  = A(opt.mixCost);
 end
 
