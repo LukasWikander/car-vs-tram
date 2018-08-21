@@ -153,7 +153,7 @@ for i = simulated_drive_cycles
     output.P_brake_max_kW = max([output.P_brake_max_kW, MaxBrakingPower / 1000]);
 	output.P_traction_W{i} = Power.signals(3).values*1000;
 	output.P_brake_W{i} = Power.signals(5).values*1000;
-	output.speed_kmh{i} = Power.signals(1).values*1000;
+	output.speed_kmh{i} = Power.signals(1).values;
     output.t_round_trip = output.t_round_trip + tTrip;
 	
     %% Battery size calculation
