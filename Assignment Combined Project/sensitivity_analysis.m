@@ -4,7 +4,7 @@ disp('Running sensitivity analysis ...')
 pause(1)
 
 %% Settings
-sz_h = 0.01;						% Percentage to vary assumption
+sz_h = 0.10;						% Percentage to vary assumption
 
 %% Sensitivity analysis
 for ii = 1:3
@@ -54,7 +54,7 @@ for ii = 1:3
 			c_n = assignment_cost_function(output_n, general_params.ROI_horizon_yr);
 
 			sensitivity.(sens_fld_name).(fnames{field_no}) = [(c_p.cost - c_n.cost)./(2.*h); ...
-														(c_p.mix - c_n.mix)./(2.*h)];
+														(c_p.mixCost - c_n.mixCost)./(2.*h)];
 		else
 			output = assignment_fcn(investigated_params);
 			
@@ -62,7 +62,7 @@ for ii = 1:3
 			c_n = assignment_cost_function(output, general_params.ROI_horizon_yr - h);
 			
 			sensitivity.(sens_fld_name).(fnames{field_no}) = [(c_p.cost - c_n.cost)./(2.*h); ...
-														(c_p.mix - c_n.mix)./(2.*h)];
+														(c_p.mixCost - c_n.mixCost)./(2.*h)];
 		end
 	end
 end
