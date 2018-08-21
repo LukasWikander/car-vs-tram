@@ -9,6 +9,7 @@ title('A to B')
 ylabel('Power [kW]')
 xlabel('Time [s]')
 grid on
+xlim([min(tram_simulation_results.time{1}) max(tram_simulation_results.time{1})])
 
 subplot(212)
 plot(tram_simulation_results.time{2}, (tram_simulation_results.P_traction_W{2}+tram_simulation_results.P_brake_W{2})/1000)
@@ -16,6 +17,7 @@ title('B to A')
 ylabel('Power [kW]')
 xlabel('Time [s]')
 grid on
+xlim([min(tram_simulation_results.time{2}) max(tram_simulation_results.time{2})])
 
 %
 figure('Name','Power profile car')
@@ -25,6 +27,7 @@ title('A to B')
 ylabel('Power [kW]')
 xlabel('Time [s]')
 grid on
+xlim([min(car_simulation_results.time{1}) max(car_simulation_results.time{1})])
 
 subplot(212)
 plot(car_simulation_results.time{2}, (car_simulation_results.P_traction_W{2}+car_simulation_results.P_brake_W{2})/1000)
@@ -32,38 +35,56 @@ title('B to A')
 ylabel('Power [kW]')
 xlabel('Time [s]')
 grid on
+xlim([min(car_simulation_results.time{2}) max(car_simulation_results.time{2})])
 
 %% Speed profiles
 figure('Name','Speed profile tram')
 subplot(211)
 plot(tram_simulation_results.time{1}, tram_simulation_results.speed_kmh{1})
 title('A to B')
+hold on
+plot([min(tram_simulation_results.time{1}) max(tram_simulation_results.time{1})],[general_params.v_max_kmh general_params.v_max_kmh],'k--')
+legend({'Optimal trajectory','Simulated trajectory','Maximum speed'},'Location','south')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
 grid on
+xlim([min(tram_simulation_results.time{1}) max(tram_simulation_results.time{1})])
+
 
 subplot(212)
 plot(tram_simulation_results.time{2}, tram_simulation_results.speed_kmh{2})
 title('B to A')
+hold on
+plot([min(tram_simulation_results.time{2}) max(tram_simulation_results.time{2})],[general_params.v_max_kmh general_params.v_max_kmh],'k--')
+legend({'Optimal trajectory','Simulated trajectory','Maximum speed'},'Location','south')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
 grid on
+xlim([min(tram_simulation_results.time{2}) max(tram_simulation_results.time{2})])
 
 %
 figure('Name','Speed profile car')
 subplot(211)
 plot(car_simulation_results.time{1}, car_simulation_results.speed_kmh{1})
 title('A to B')
+hold on
+plot([min(car_simulation_results.time{1}) max(car_simulation_results.time{1})],[general_params.v_max_kmh general_params.v_max_kmh],'k--')
+legend({'Optimal trajectory','Simulated trajectory','Maximum speed'},'Location','south')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
 grid on
+xlim([min(car_simulation_results.time{1}) max(car_simulation_results.time{1})])
 
 subplot(212)
 plot(car_simulation_results.time{2}, car_simulation_results.speed_kmh{2})
 title('B to A')
+hold on
+plot([min(car_simulation_results.time{2}) max(car_simulation_results.time{2})],[general_params.v_max_kmh general_params.v_max_kmh],'k--')
+legend({'Optimal trajectory','Simulated trajectory','Maximum speed'},'Location','south')
 ylabel('Speed [km/h]')
 xlabel('Time [s]')
 grid on
+xlim([min(car_simulation_results.time{2}) max(car_simulation_results.time{2})])
 
 
 %% Lifetime costs
