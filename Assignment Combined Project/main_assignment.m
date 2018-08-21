@@ -72,7 +72,7 @@ car_params.P_max_kW = inf; % Maximum power [kW]
 
 % Dynamic programming cost function parameters:
 car_params.accpenalty = 0.25;
-car_params.traveltimepenalty = 0.058;
+car_params.traveltimepenalty = 0.25*0.058;
 car_params.energypenalty = 0.1;
 
 %% Run simulation with provided parameters
