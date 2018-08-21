@@ -48,6 +48,7 @@ car_params.E_round_trip_kWh = car_full_sim_output.E_tot_kWh;
 
 %% Run optimization for the battery sizes
 if doPlot
+	fprintf('--- Optimizing battery sizes --- \n')
     costFun = @(x)costFunction(x,tram_params, car_params, general_params,...
         drv_mission, pass_flow, tram_full_sim_output, car_full_sim_output,...
         tram_empty_sim_output,car_empty_sim_output); % Cost function of the optimization problem
@@ -78,7 +79,7 @@ car_params.E_battery_size_kWh = x(indexes(1),2);
 
 %% Calculation for the selected values derived from the optimization
 fleet_info_output = fleet_size_estimation(tram_params, car_params, general_params, drv_mission, pass_flow, general_params.n_variations);
-cost_estimation_output = cost_estimation(tram_params, car_params, general_params, tram_full_sim_output, car_full_sim_output, fleet_info_output);
+cost_estimation_output = cost_estimation(tram_params, car_params, general_params, tram_full_sim_output, car_full_sim_output, fleet_info_output, doPlot);
 outputs.results.fleet = fleet_info_output;
 outputs.results.costs = cost_estimation_output;
 ROI_yr = general_params.ROI_horizon_yr; % Time at which to evaluate cost [year]

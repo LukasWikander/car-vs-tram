@@ -13,7 +13,7 @@ fleet_info_output = fleet_size_estimation(tram_params, car_params, general_param
 
 % Cost estimation
 % TODO: Use empty vehicle simulation to get more accurate costs
-cost_estimation_output = cost_estimation(tram_params, car_params, general_params, tram_full_sim_output, car_full_sim_output, fleet_info_output);
+cost_estimation_output = cost_estimation(tram_params, car_params, general_params, tram_full_sim_output, car_full_sim_output, fleet_info_output, false);
 
 % Output
 outputs.params.tram = tram_params;
